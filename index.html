@@ -1,0 +1,1906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TakarBazar — Master Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <style>
+        :root {
+            --bg-main: #06070f; --bg-sidebar: #0a0b16; --bg-card: #0d0e1a; --bg-hover: #1a1d33;
+            --bg-input: #14162a; --text-main: #f1f5f9; --text-muted: #64748b; --text-secondary: #94a3b8;
+            --accent: #f97316; --accent-light: #fb923c; --accent-glow: rgba(249, 115, 22, 0.15);
+            --green: #10b981; --red: #ef4444; --gold: #fbbf24; --purple: #a855f7; --blue: #3b82f6;
+            --border-color: rgba(255,255,255,0.08); --border-strong: rgba(255,255,255,0.14);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Hind Siliguri', sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main);
+            background-image: radial-gradient(ellipse 800px 600px at 15% -10%, rgba(249,115,22,0.06), transparent 60%),
+                radial-gradient(ellipse 700px 800px at 100% 30%, rgba(168,85,247,0.05), transparent 60%);
+            background-attachment: fixed; min-height: 100vh; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+        .login-screen { display: flex; position: fixed; inset: 0; z-index: 500; align-items: center; justify-content: center; padding: 20px; background: var(--bg-main);
+            background-image: radial-gradient(ellipse 900px 700px at 20% 0%, rgba(249,115,22,0.15), transparent 60%),
+                radial-gradient(ellipse 700px 800px at 100% 100%, rgba(168,85,247,0.10), transparent 60%); }
+        .login-card { width: 100%; max-width: 420px; background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent), var(--bg-card); border: 1px solid var(--border-strong); border-radius: 24px; padding: 36px 30px; box-shadow: 0 24px 80px rgba(0,0,0,0.85), 0 0 0 1px rgba(249,115,22,0.05); position: relative; overflow: hidden; }
+        .login-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(249,115,22,0.6), transparent); }
+        .login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; justify-content: center; }
+        .login-logo i { width: 48px; height: 48px; padding: 12px; background: linear-gradient(135deg, #fb923c, #ea580c); color: #fff; border-radius: 14px; box-shadow: 0 8px 24px rgba(249,115,22,0.4), inset 0 1px 0 rgba(255,255,255,0.25); }
+        .login-brand { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; line-height: 1.1; }
+        .login-sub { font-size: 10.5px; color: var(--accent); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-top: 3px; }
+        .login-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 6px; text-align: center; }
+        .login-desc { font-size: 12.5px; color: var(--text-muted); margin-bottom: 26px; text-align: center; }
+        .login-error { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.4); border-radius: 12px; padding: 12px 14px; font-size: 12.5px; color: #fca5a5; font-weight: 600; margin-bottom: 18px; display: flex; align-items: flex-start; gap: 8px; line-height: 1.5; animation: shake 0.35s ease; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+        .login-field { margin-bottom: 16px; }
+        .login-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.6px; margin-bottom: 8px; }
+        .login-input-wrap { display: flex; align-items: center; background: var(--bg-input); border: 1.5px solid var(--border-color); border-radius: 12px; padding: 0 14px; transition: all 0.2s; }
+        .login-input-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); background: rgba(20,22,42,0.9); }
+        .login-input-wrap > i { color: var(--accent); width: 16px; height: 16px; margin-right: 10px; flex-shrink: 0; }
+        .login-input-wrap input { flex: 1; background: transparent; border: none; outline: none; padding: 13px 0; color: var(--text-main); font-size: 14px; font-weight: 600; }
+        .login-input-wrap input::placeholder { color: var(--text-muted); font-weight: 500; }
+        .login-eye { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center; }
+        .login-eye:hover { color: var(--text-main); }
+        .login-eye i { width: 16px; height: 16px; }
+        .login-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #fb923c, #ea580c); border: none; border-radius: 12px; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 24px rgba(249,115,22,0.4), inset 0 1px 0 rgba(255,255,255,0.25); transition: all 0.2s; margin-top: 8px; }
+        .login-btn:hover { box-shadow: 0 12px 32px rgba(249,115,22,0.55); transform: translateY(-1px); }
+        .login-btn:active { transform: translateY(0); }
+        .login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .login-btn i { width: 16px; height: 16px; }
+        .login-hint { margin-top: 22px; padding: 14px 16px; background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.25); border-radius: 12px; font-size: 11.5px; color: var(--text-secondary); line-height: 1.7; }
+        .login-hint i { width: 14px; height: 14px; color: #60a5fa; vertical-align: middle; margin-right: 4px; }
+        .login-footer { margin-top: 22px; text-align: center; font-size: 10.5px; color: var(--text-muted); line-height: 1.5; }
+        .admin-wrapper { display: none; height: 100vh; overflow: hidden; }
+        .sidebar { width: 260px; background-color: var(--bg-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 20px 0; overflow-y: auto; flex-shrink: 0; height: 100vh; }
+        .logo { padding: 0 24px; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+        .logo-icon { color: var(--accent); }
+        .logo-sub { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; margin-top: 2px; }
+        .menu-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; padding: 0 24px; margin-bottom: 6px; margin-top: 18px; font-weight: 700; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 11px 24px; color: var(--text-muted); text-decoration: none; font-size: 13.5px; font-weight: 500; transition: all 0.2s; cursor: pointer; position: relative; }
+        .nav-item:hover { color: var(--text-main); background-color: var(--bg-hover); }
+        .nav-item.active { color: var(--accent-light); background: linear-gradient(90deg, rgba(249,115,22,0.12), transparent); border-right: 3px solid var(--accent); }
+        .nav-item i { width: 17px; height: 17px; }
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; border-bottom: 1px solid var(--border-color); background: rgba(6,7,15,0.85); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 20; }
+        .search-bar { display: flex; align-items: center; background-color: var(--bg-card); border: 1px solid var(--border-color); padding: 8px 15px; border-radius: 10px; width: 320px; }
+        .search-bar input { background: none; border: none; color: var(--text-main); outline: none; margin-left: 10px; width: 100%; font-size: 13px; }
+        .search-bar input::placeholder { color: var(--text-muted); }
+        .topbar-actions { display: flex; align-items: center; gap: 12px; }
+        .icon-btn { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-secondary); cursor: pointer; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .icon-btn:hover { color: var(--text-main); border-color: var(--border-strong); }
+        .icon-btn.logout-btn:hover { color: #f87171; border-color: rgba(239,68,68,0.4); }
+        .user-profile { display: flex; align-items: center; gap: 10px; background-color: var(--bg-card); border: 1px solid var(--border-color); padding: 5px 14px 5px 5px; border-radius: 30px; cursor: pointer; }
+        .avatar { width: 28px; height: 28px; background: linear-gradient(135deg, #fb923c, #ea580c); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; }
+        .fb-status-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; padding: 6px 12px; border-radius: 20px; background: rgba(148,163,184,0.15); color: #94a3b8; }
+        .fb-status-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+        .fb-status-badge.live { background: rgba(16,185,129,0.15); color: #34d399; }
+        .fb-status-badge.live .dot { box-shadow: 0 0 8px currentColor; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .page-header { padding: 28px 30px 20px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 14px; }
+        .breadcrumb { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+        .page-title h1 { font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .page-title p { font-size: 13px; color: var(--text-muted); }
+        .header-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border-color); background-color: var(--bg-card); color: var(--text-main); white-space: nowrap; }
+        .btn:hover { background-color: var(--bg-hover); border-color: var(--border-strong); }
+        .btn-primary { background: linear-gradient(135deg, #fb923c, #ea580c); border: none; color: #fff; box-shadow: 0 4px 16px rgba(249,115,22,0.3); }
+        .btn-primary:hover { box-shadow: 0 6px 20px rgba(249,115,22,0.45); }
+        .btn-danger { background: rgba(239,68,68,0.1); color: #f87171; border-color: rgba(239,68,68,0.3); }
+        .btn-danger:hover { background: rgba(239,68,68,0.2); }
+        .btn-success { background: rgba(16,185,129,0.1); color: #34d399; border-color: rgba(16,185,129,0.3); }
+        .btn-success:hover { background: rgba(16,185,129,0.2); }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .btn-xs { padding: 4px 9px; font-size: 11px; border-radius: 7px; }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn .3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        .dashboard-grid { padding: 20px 30px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .dash-card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; position: relative; overflow: hidden; }
+        .dash-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .dash-card-title { font-size: 13px; color: var(--text-muted); margin-bottom: 5px; }
+        .dash-card-subtitle { font-size: 16px; font-weight: 600; }
+        .dash-card-actions { display: flex; gap: 8px; }
+        .dash-card-icon-btn { background-color: var(--bg-hover); border: none; color: var(--text-muted); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+        .dash-card-icon-btn:hover { color: var(--text-main); }
+        .dash-main-value { font-size: 32px; font-weight: 700; margin-bottom: 5px; }
+        .dash-sub-stats { display: flex; gap: 15px; font-size: 12px; color: var(--text-muted); margin-bottom: 20px; }
+        .dash-stat-change { color: var(--green); font-size: 12px; display: flex; align-items: center; gap: 4px; }
+        .chart-container { position: relative; height: 100px; width: 100%; }
+        .donut-chart-container { position: relative; height: 120px; width: 120px; margin: 0 auto; }
+        .donut-center-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; font-size: 20px; font-weight: 700; }
+        .glowing-orb { position: absolute; right: 30px; top: 50%; transform: translateY(-50%); width: 100px; height: 100px; background: radial-gradient(circle, rgba(249,115,22,0.8) 0%, rgba(249,115,22,0) 70%); border-radius: 50%; filter: blur(10px); z-index: 0; pointer-events: none; }
+        .glowing-orb-inner { position: absolute; right: 40px; top: 50%; width: 80px; height: 80px; border: 1px solid var(--accent); border-radius: 20px 40px 20px 40px; box-shadow: 0 0 20px var(--accent-glow), inset 0 0 20px var(--accent-glow); z-index: 1; transform: translateY(-50%) rotate(45deg); pointer-events: none; }
+        .progress-container { width: 100%; height: 8px; background-color: #333; border-radius: 4px; margin-top: 20px; position: relative; }
+        .progress-bar { height: 100%; background-color: var(--accent); border-radius: 4px; position: relative; transition: width 0.8s ease; }
+        .progress-knob { position: absolute; right: -6px; top: -4px; width: 16px; height: 16px; background-color: #000; border: 2px solid var(--accent); border-radius: 50%; }
+        .days-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-top: 10px; }
+        .days-labels span.highlight { color: #fff; font-weight: bold; }
+        .bar-chart-visual { display: flex; justify-content: space-between; align-items: flex-end; height: 60px; margin-top: 20px; }
+        .bar { width: 12px; background-color: #333; border-radius: 4px; transition: height 0.6s ease; }
+        .bar.active { background-color: var(--accent); }
+        .table-wrap { margin: 0 30px 30px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; }
+        .table-header { padding: 16px 22px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 12px; }
+        .table-header h3 { font-size: 15px; font-weight: 700; font-family: 'Space Grotesk', sans-serif; }
+        .table-header p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: rgba(255,255,255,0.02); }
+        th { text-align: left; padding: 12px 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.8px; border-bottom: 1px solid var(--border-color); }
+        td { padding: 14px 20px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--text-secondary); }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+        .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; }
+        .badge-green { background: rgba(16,185,129,0.15); color: #34d399; }
+        .badge-red { background: rgba(239,68,68,0.15); color: #f87171; }
+        .badge-orange { background: rgba(249,115,22,0.15); color: #fb923c; }
+        .badge-purple { background: rgba(168,85,247,0.15); color: #c084fc; }
+        .badge-gray { background: rgba(148,163,184,0.15); color: #94a3b8; }
+        .badge-yellow { background: rgba(251,191,36,0.15); color: #fbbf24; }
+        .filter-tabs { display: inline-flex; background: var(--bg-input); padding: 4px; border-radius: 10px; gap: 2px; flex-wrap: wrap; }
+        .filter-tab { padding: 6px 14px; font-size: 12px; font-weight: 600; background: transparent; border: none; color: var(--text-muted); border-radius: 7px; cursor: pointer; transition: all 0.2s; }
+        .filter-tab.active { background: var(--bg-hover); color: var(--text-main); }
+        .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(2,3,8,0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+        .modal-backdrop.show { display: flex; animation: modalFade .2s ease; }
+        @keyframes modalFade { from { opacity: 0; } to { opacity: 1; } }
+        .modal { background: var(--bg-card); border: 1px solid var(--border-strong); border-radius: 20px; width: 100%; max-width: 460px; padding: 26px; box-shadow: 0 24px 80px rgba(0,0,0,0.9); max-height: 90vh; overflow-y: auto; }
+        .modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; font-family: 'Space Grotesk', sans-serif; }
+        .modal p.modal-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 11.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-input, .form-select, .form-textarea { width: 100%; padding: 11px 14px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 10px; color: var(--text-main); font-size: 13.5px; font-weight: 500; outline: none; transition: all 0.2s; font-family: inherit; }
+        .form-textarea { resize: vertical; min-height: 90px; font-family: monospace; font-size: 12px; }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+        .form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; flex-wrap: wrap; }
+        #toastBox { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 3000; display: flex; flex-direction: column; gap: 10px; width: calc(100% - 36px); max-width: 400px; pointer-events: none; }
+        .toast { background: var(--bg-card); border: 1px solid var(--border-strong); border-left: 3px solid var(--accent); border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 600; box-shadow: 0 8px 32px rgba(0,0,0,0.7); animation: toastIn .25s ease; color: var(--text-main); }
+        .toast.success { border-left-color: var(--green); }
+        .toast.error { border-left-color: var(--red); }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        .quick-actions-row { padding: 0 30px 20px; }
+        .quick-actions-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 14px; }
+        .quick-action-btn { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; text-align: left; cursor: pointer; transition: all 0.2s; color: var(--text-main); display: flex; flex-direction: column; gap: 8px; }
+        .quick-action-btn:hover { border-color: var(--border-strong); transform: translateY(-2px); background: var(--bg-hover); }
+        .quick-action-btn i { width: 32px; height: 32px; padding: 8px; border-radius: 8px; }
+        .quick-action-btn span { font-size: 12.5px; font-weight: 700; }
+        .pkg-thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: #1a1d33; border: 1px solid var(--border-color); display: block; }
+        .pkg-image-preview { margin-top: 10px; width: 100%; height: 120px; border-radius: 10px; object-fit: cover; background: #1a1d33; border: 1px solid var(--border-color); display: none; }
+        .code-display-box { background: var(--bg-input); border: 1.5px dashed var(--accent); border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+        .code-display-val { font-family: 'Space Grotesk', monospace; font-size: 18px; font-weight: 700; color: var(--gold); letter-spacing: 2px; flex: 1; }
+        .random-gen-btn { background: linear-gradient(135deg, #a855f7, #7e22ce); border: none; color: #fff; padding: 8px 14px; border-radius: 8px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(168,85,247,0.35); transition: all 0.2s; }
+        .random-gen-btn:hover { box-shadow: 0 6px 16px rgba(168,85,247,0.5); transform: translateY(-1px); }
+        .random-gen-btn i { width: 13px; height: 13px; }
+        @media (max-width: 1200px) { .dashboard-grid { grid-template-columns: repeat(2, 1fr); } .quick-actions-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 768px) {
+            .admin-wrapper { flex-direction: column; height: auto; overflow: auto; }
+            .sidebar { width: 100%; height: auto; flex-direction: row; overflow-x: auto; padding: 10px; gap: 4px; border-right: none; border-bottom: 1px solid var(--border-color); }
+            .logo { display: none; } .menu-label { display: none; }
+            .nav-item { padding: 8px 14px; white-space: nowrap; }
+            .nav-item.active { border-right: none; border-bottom: 2px solid var(--accent); background: transparent; }
+            .main-content { overflow: visible; }
+            .topbar { flex-direction: column; gap: 12px; align-items: stretch; padding: 14px 20px; }
+            .search-bar { width: 100%; }
+            .page-header { padding: 20px; }
+            .dashboard-grid { grid-template-columns: 1fr; padding: 15px 20px; }
+            .quick-actions-row { padding: 0 20px 20px; }
+            .quick-actions-grid { grid-template-columns: 1fr 1fr; }
+            .table-wrap { margin: 0 20px 20px; overflow-x: auto; }
+            table { min-width: 600px; }
+            .login-card { padding: 28px 22px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="toastBox"></div>
+
+<div id="adminLoginScreen" class="login-screen" style="display:flex;">
+    <div class="login-card">
+        <div class="login-logo">
+            <i data-lucide="shield-check"></i>
+            <div>
+                <div class="login-brand">TakarBazar</div>
+                <div class="login-sub">Admin Panel</div>
+            </div>
+        </div>
+        <h2 class="login-title">Admin Login</h2>
+        <p class="login-desc">Sign in with your Firebase account</p>
+        <div id="loginErrorBox" class="login-error" style="display:none;"></div>
+        <form id="adminLoginForm" onsubmit="handleAdminLogin(event)">
+            <div class="login-field">
+                <label class="login-label">Email</label>
+                <div class="login-input-wrap">
+                    <i data-lucide="mail"></i>
+                    <input type="email" id="adminLoginEmail" placeholder="your@gmail.com" autocomplete="email" required>
+                </div>
+            </div>
+            <div class="login-field">
+                <label class="login-label">Password</label>
+                <div class="login-input-wrap">
+                    <i data-lucide="lock"></i>
+                    <input type="password" id="adminLoginPass" placeholder="Enter password" autocomplete="current-password" required>
+                    <button type="button" class="login-eye" onclick="toggleAdminPass()">
+                        <i data-lucide="eye" id="adminLoginEyeIcon"></i>
+                    </button>
+                </div>
+            </div>
+            <button type="submit" class="login-btn" id="adminLoginBtn">
+                <i data-lucide="log-in"></i>
+                <span>Sign In</span>
+            </button>
+        </form>
+        <div class="login-hint">
+            <i data-lucide="info"></i>
+            <div>
+                <strong>ℹ️ Login:</strong><br>
+                Firebase-এ আপনি যে Email + Password দিয়ে admin user বানিয়েছেন, সেটাই ব্যবহার করুন।
+            </div>
+        </div>
+        <div class="login-footer">🔒 Secured by Firebase Authentication.<br>Session persists across reloads.</div>
+    </div>
+</div>
+
+<div id="adminPanelWrapper" class="admin-wrapper">
+    <aside class="sidebar">
+        <div class="logo">
+            <i data-lucide="hexagon" class="logo-icon"></i>
+            <div><div>TakarBazar</div><div class="logo-sub">Admin Panel</div></div>
+        </div>
+        <div class="menu-label">Dashboard</div>
+        <a class="nav-item active" data-page="overview"><i data-lucide="layout-dashboard"></i> Overview</a>
+        <a class="nav-item" data-page="users"><i data-lucide="users"></i> Users</a>
+        <a class="nav-item" data-page="deposits"><i data-lucide="download"></i> Deposits</a>
+        <a class="nav-item" data-page="withdraws"><i data-lucide="upload"></i> Withdraws</a>
+        <div class="menu-label">Configuration</div>
+        <a class="nav-item" data-page="packages"><i data-lucide="package"></i> Packages</a>
+        <a class="nav-item" data-page="vouchers"><i data-lucide="gift"></i> Gift Codes</a>
+        <a class="nav-item" data-page="settings"><i data-lucide="settings"></i> Settings</a>
+        <div class="menu-label">System</div>
+        <a class="nav-item" data-page="history"><i data-lucide="history"></i> All History</a>
+        <a class="nav-item" id="sidebarLogoutBtn"><i data-lucide="log-out"></i> Logout</a>
+    </aside>
+    <main class="main-content">
+        <header class="topbar">
+            <div class="search-bar">
+                <i data-lucide="search" size="16" color="#64748b"></i>
+                <input type="text" id="globalSearch" placeholder="Search users, transactions...">
+            </div>
+            <div class="topbar-actions">
+                <span id="fbStatusBadge" class="fb-status-badge"><span class="dot"></span><span id="fbStatusText">Local</span></span>
+                <button class="icon-btn" onclick="syncNow()" title="Refresh Data"><i data-lucide="refresh-cw" size="16"></i></button>
+                <button class="icon-btn" onclick="exportAll()" title="Export"><i data-lucide="download" size="16"></i></button>
+                <button class="icon-btn logout-btn" onclick="handleAdminLogout()" title="Logout"><i data-lucide="log-out" size="16"></i></button>
+                <div class="user-profile">
+                    <div class="avatar">AD</div>
+                    <span id="topbarAdminName" style="font-size:13px;font-weight:600;">Admin</span>
+                </div>
+            </div>
+        </header>
+
+        <section class="page active" id="page-overview">
+            <div class="page-header">
+                <div class="page-title">
+                    <div class="breadcrumb"><i data-lucide="home" size="12"></i> › Dashboard</div>
+                    <h1>Overview</h1>
+                    <p>Monitor key metrics and manage your platform</p>
+                </div>
+                <div class="header-buttons">
+                    <button class="btn" onclick="syncNow()"><i data-lucide="refresh-cw" size="15"></i> Refresh</button>
+                    <button class="btn btn-primary" onclick="exportAll()"><i data-lucide="download" size="15"></i> Export</button>
+                </div>
+            </div>
+            <div class="dashboard-grid" id="dashCards"></div>
+            <div class="quick-actions-row">
+                <div class="card">
+                    <div class="card-title">Quick Actions</div>
+                    <div style="font-size:15px; font-weight:700; font-family:'Space Grotesk',sans-serif;">Manage your platform</div>
+                    <div class="quick-actions-grid">
+                        <button class="quick-action-btn" onclick="goToPage('users'); openAddUserModal();">
+                            <i data-lucide="user-plus" style="background:rgba(249,115,22,0.15); color:#fb923c;"></i><span>Add User</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="goToPage('deposits'); openManualDepositModal();">
+                            <i data-lucide="plus-circle" style="background:rgba(16,185,129,0.15); color:#34d399;"></i><span>Manual Deposit</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="goToPage('vouchers'); openAddVoucherModal();">
+                            <i data-lucide="gift" style="background:rgba(251,191,36,0.15); color:#fbbf24;"></i><span>New Gift Code</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="goToPage('settings');">
+                            <i data-lucide="settings" style="background:rgba(168,85,247,0.15); color:#c084fc;"></i><span>Settings</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <div class="table-header">
+                    <div><h3>Recent Transactions</h3><p>Latest 10 activity from all users</p></div>
+                    <button class="btn btn-sm" onclick="goToPage('history')">View All <i data-lucide="arrow-right" size="13"></i></button>
+                </div>
+                <table>
+                    <thead><tr><th>Category</th><th>Method</th><th>Amount</th><th>TrxID</th><th>Status</th><th>Time</th></tr></thead>
+                    <tbody id="recentTxBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="page" id="page-users">
+            <div class="page-header">
+                <div class="page-title">
+                    <div class="breadcrumb"><i data-lucide="home" size="12"></i> › Manage</div>
+                    <h1>Users</h1>
+                    <p>Manage all registered accounts & balances</p>
+                </div>
+                <div class="header-buttons">
+                    <button class="btn btn-primary" onclick="openAddUserModal()"><i data-lucide="user-plus" size="15"></i> Add User</button>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <div class="table-header">
+                    <div><h3>All Users <span id="usersCount" style="color:var(--accent);"></span></h3><p>Registered accounts (6-digit UID auto-assigned)</p></div>
+                </div>
+                <table>
+                    <thead><tr><th>Phone</th><th>Name</th><th>Password</th><th>UID (6-digit)</th><th>Actions</th></tr></thead>
+                    <tbody id="usersBody"></tbody>
+                </table>
+            </div>
+            <div class="table-wrap" style="margin-top:0;">
+                <div class="table-header">
+                    <div><h3>Current Session</h3><p>Active logged-in account state (global)</p></div>
+                    <button class="btn btn-sm btn-danger" onclick="resetSession()"><i data-lucide="trash-2" size="14"></i> Reset Session</button>
+                </div>
+                <div style="padding: 20px;">
+                    <div class="grid" style="padding:0; display:grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                        <div class="card" style="padding:16px;">
+                            <div class="card-title">Wallet Balance</div>
+                            <div class="main-value" style="font-size:22px;">৳<span id="sessionBalance">0.00</span></div>
+                            <button class="btn btn-sm" style="margin-top:10px;" onclick="adjustGlobal('tb_balance', 'Wallet Balance')">Adjust</button>
+                        </div>
+                        <div class="card" style="padding:16px;">
+                            <div class="card-title">Total Deposit</div>
+                            <div class="main-value" style="font-size:22px; color:var(--gold);">৳<span id="sessionDeposit">0.00</span></div>
+                            <button class="btn btn-sm" style="margin-top:10px;" onclick="adjustGlobal('tb_deposit', 'Total Deposit')">Adjust</button>
+                        </div>
+                        <div class="card" style="padding:16px;">
+                            <div class="card-title">Total Income</div>
+                            <div class="main-value" style="font-size:22px; color:var(--green);">৳<span id="sessionIncome">0.00</span></div>
+                            <button class="btn btn-sm" style="margin-top:10px;" onclick="adjustGlobal('tb_income', 'Total Income')">Adjust</button>
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px;">
+                        <div class="card" style="padding:16px;">
+                            <div class="card-title">Plan Earnings</div>
+                            <div class="main-value" style="font-size:22px; color:var(--purple);">৳<span id="sessionPlanEarnings">0.00</span></div>
+                            <button class="btn btn-sm" style="margin-top:10px;" onclick="adjustGlobal('tb_plan_earnings', 'Plan Earnings')">Adjust</button>
+                        </div>
+                        <div class="card" style="padding:16px;">
+                            <div class="card-title">Withdraw Status</div>
+                            <div class="main-value" style="font-size:18px;" id="sessionWithdrawStatus">🔒 Locked</div>
+                            <button class="btn btn-sm" style="margin-top:10px;" onclick="toggleHasBoughtPlan()">Toggle</button>
+                        </div>
+                        <div class="card" style="padding:16px;">
+                            <div class="card-title">Active Plans</div>
+                            <div class="main-value" style="font-size:22px;">📦 <span id="sessionPlansCount">0</span></div>
+                            <button class="btn btn-sm" style="margin-top:10px;" onclick="clearActivePlans()">Clear</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="page" id="page-deposits">
+            <div class="page-header">
+                <div class="page-title">
+                    <div class="breadcrumb"><i data-lucide="home" size="12"></i> › Transactions</div>
+                    <h1>Deposits</h1>
+                    <p>Approve or reject deposit requests</p>
+                </div>
+                <div class="header-buttons">
+                    <button class="btn btn-primary" onclick="openManualDepositModal()"><i data-lucide="plus" size="15"></i> Manual Deposit</button>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <div class="table-header">
+                    <div><h3>Deposit History</h3><p>Pending requests need approval</p></div>
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" onclick="filterDeposits('All', this)">All</button>
+                        <button class="filter-tab" onclick="filterDeposits('bKash Go-Pay', this)">bKash Go-Pay</button>
+                        <button class="filter-tab" onclick="filterDeposits('bKash Fast-Pay', this)">bKash Fast-Pay</button>
+                        <button class="filter-tab" onclick="filterDeposits('Nagad Personal', this)">Nagad</button>
+                    </div>
+                </div>
+                <table>
+                    <thead><tr><th>Method</th><th>Amount</th><th>TrxID</th><th>Phone</th><th>Status</th><th>Time</th><th>Actions</th></tr></thead>
+                    <tbody id="depositsBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="page" id="page-withdraws">
+            <div class="page-header">
+                <div class="page-title">
+                    <div class="breadcrumb"><i data-lucide="home" size="12"></i> › Transactions</div>
+                    <h1>Withdrawals</h1>
+                    <p>Approve or reject withdrawal requests</p>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <div class="table-header">
+                    <div><h3>Withdraw History</h3><p>Pending requests need approval</p></div>
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" onclick="filterWithdraws('All', this)">All</button>
+                        <button class="filter-tab" onclick="filterWithdraws('bKash', this)">bKash</button>
+                        <button class="filter-tab" onclick="filterWithdraws('Nagad', this)">Nagad</button>
+                    </div>
+                </div>
+                <table>
+                    <thead><tr><th>Method</th><th>Amount</th><th>Phone</th><th>Status</th><th>Time</th><th>Actions</th></tr></thead>
+                    <tbody id="withdrawsBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="page" id="page-packages">
+            <div class="page-header">
+                <div class="page-title">
+                    <div class="breadcrumb"><i data-lucide="home" size="12"></i> › Configuration</div>
+                    <h1>Investment Packages</h1>
+                    <p>Edit daily bonus, duration, price — syncs to website instantly</p>
+                </div>
+                <div class="header-buttons">
+                    <button class="btn btn-danger" onclick="resetPackages()"><i data-lucide="rotate-ccw" size="15"></i> Reset to Default (2 Packages)</button>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <div class="table-header"><div><h3>All Packages</h3><p>Only 2 active packages. Edit daily bonus, duration etc.</p></div></div>
+                <table>
+                    <thead><tr><th>Image</th><th>ID</th><th>Name</th><th>Price (৳)</th><th>Daily Bonus (৳)</th><th>Days</th><th>Total Return (৳)</th><th>Actions</th></tr></thead>
+                    <tbody id="packagesBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="page" id="page-vouchers">
+            <div class="page-header">
+                <div class="page-title">
+                    <div class="breadcrumb"><i data-lucide="home" size="12"></i> › Configuration</div>
+                    <h1>Gift Codes</h1>
+                    <p>Create single-use voucher codes. Each code can only be redeemed once.</p>
+                </div>
+                <div class="header-buttons">
+                    <button class="btn" onclick="quickGenerateRandomCode()"><i data-lucide="wand-2" size="15"></i> Quick Random Code</button>
+                    <button class="btn btn-primary" onclick="openAddVoucherModal()"><i data-lucide="plus" size="15"></i> Add Code</button>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <div class="table-header"><div><h3>Active Gift Codes</h3><p>Users can redeem these ONCE each</p></div></div>
+                <table>
+                    <thead><tr><th>Code</th><th>Reward (৳)</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody id="vouchersBody"></tbody>
+                </table>
+            </div>
+            <div class="table-wrap" style="margin-top:0;">
+                <div class="table-header"><div><h3>Redeemed Codes</h3><p>Already used by user (cannot be reused)</p></div></div>
+                <table>
+                    <thead><tr><th>Code</th><th>Status</th></tr></thead>
+                    <tbody id="redeemedBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="page" id="page-settings">
+            <div class="page-header">
+                <div class="page-title">
+                    <div class="breadcrumb"><i data-lucide="home" size="12"></i> › System</div>
+                    <h1>Settings</h1>
+                    <p>Wallet numbers, limits, referral % — syncs to website instantly</p>
+                </div>
+            </div>
+
+            <div class="card" style="margin: 0 30px 20px; border: 1.5px solid rgba(239,68,68,0.3);">
+                <h3 style="font-size:16px; font-weight:700; margin-bottom:6px;">
+                    <i data-lucide="shield-check" size="16" style="vertical-align:middle; color:var(--red);"></i> Admin Account (Firebase Auth)
+                </h3>
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">
+                    আপনি Firebase Authentication দিয়ে লগইন আছেন। পাসওয়ার্ড বদলাতে চাইলে নিচের বাটনে ক্লিক করুন — আপনার Email-এ reset link যাবে।
+                </p>
+                <div style="display:flex; align-items:center; gap:14px; padding:16px; background:var(--bg-input); border-radius:12px; margin-bottom:16px;">
+                    <div class="avatar" style="width:44px; height:44px; font-size:14px;">AD</div>
+                    <div>
+                        <div id="settingsCurrentEmail" style="font-weight:700; font-size:14px;">—</div>
+                        <div style="font-size:11px; color:var(--text-muted);">Logged in via Firebase</div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="btn btn-primary" onclick="sendPasswordResetEmail()"><i data-lucide="mail" size="14"></i> Reset Password Email পাঠান</button>
+                    <button class="btn btn-danger" onclick="handleAdminLogout()"><i data-lucide="log-out" size="14"></i> Logout</button>
+                </div>
+            </div>
+
+            <div class="card" style="margin: 0 30px 20px; border: 1.5px solid rgba(249,115,22,0.3);">
+                <h3 style="font-size:16px; font-weight:700; margin-bottom:6px;">
+                    <i data-lucide="flame" size="16" style="vertical-align:middle; color:var(--accent);"></i> Firebase Realtime Connection
+                </h3>
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Connected by default to your project. Change only if you want a different Firebase.</p>
+                <div style="display:flex; align-items:center; gap:14px; margin-bottom:18px; flex-wrap:wrap;">
+                    <span id="fbSettingsStatus" class="fb-status-badge"><span class="dot"></span><span id="fbSettingsStatusText">Not Connected</span></span>
+                    <span id="fbSettingsProject" style="font-size:12px; color:var(--text-muted);"></span>
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="btn btn-primary" onclick="openFirebaseConfigModal()"><i data-lucide="settings" size="14"></i> <span id="fbBtnLabel">Configure Firebase</span></button>
+                    <button class="btn btn-danger" id="fbDisconnectBtn" style="display:none;" onclick="disconnectFirebase()"><i data-lucide="unplug" size="14"></i> Disconnect</button>
+                </div>
+            </div>
+
+            <div class="card" style="margin: 0 30px 20px;">
+                <h3 style="font-size:16px; font-weight:700; margin-bottom:6px;"><i data-lucide="wallet" size="16" style="vertical-align:middle; color:var(--accent);"></i> Wallet Numbers (3 methods)</h3>
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Payment receiving numbers shown to users</p>
+                <div class="form-group"><label class="form-label">bKash — Go-Pay Number</label><input type="text" id="setBkashGoPay" class="form-input" placeholder="01XXXXXXXXX"></div>
+                <div class="form-group"><label class="form-label">bKash — Fast-Pay Number</label><input type="text" id="setBkashFastPay" class="form-input" placeholder="01XXXXXXXXX"></div>
+                <div class="form-group"><label class="form-label">Nagad Wallet Number</label><input type="text" id="setNagadNumber" class="form-input" placeholder="01XXXXXXXXX"></div>
+                <button class="btn btn-primary" onclick="saveWalletSettings()"><i data-lucide="save" size="14"></i> Save Wallets</button>
+            </div>
+
+            <div style="padding: 0 30px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="card">
+                    <h3 style="font-size:16px; font-weight:700; margin-bottom:6px;"><i data-lucide="sliders" size="16" style="vertical-align:middle; color:var(--accent);"></i> Limits & Bonus</h3>
+                    <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Amount limits for deposit/withdraw & bonus</p>
+                    <div class="form-group"><label class="form-label">Minimum Deposit (৳)</label><input type="number" id="setMinDeposit" class="form-input"></div>
+                    <div class="form-group"><label class="form-label">Minimum Withdraw (৳)</label><input type="number" id="setMinWithdraw" class="form-input"></div>
+                    <div class="form-group"><label class="form-label">Signup Bonus (৳)</label><input type="number" id="setSignupBonus" class="form-input"></div>
+                    <button class="btn btn-primary" onclick="saveLimits()"><i data-lucide="save" size="14"></i> Save Limits</button>
+                </div>
+                <div class="card">
+                    <h3 style="font-size:16px; font-weight:700; margin-bottom:6px;"><i data-lucide="percent" size="16" style="vertical-align:middle; color:var(--accent);"></i> Referral & Tax</h3>
+                    <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Referral commission & withdraw tax</p>
+                    <div class="form-group"><label class="form-label">Referral Percent (%)</label><input type="number" id="setReferralPercent" class="form-input" step="0.1"></div>
+                    <div class="form-group"><label class="form-label">Withdraw Tax (%)</label><input type="number" id="setTax" class="form-input" step="0.1"></div>
+                    <button class="btn btn-primary" onclick="saveReferralTax()"><i data-lucide="save" size="14"></i> Save</button>
+                </div>
+            </div>
+
+            <div class="card" style="margin: 0 30px 30px;">
+                <h3 style="font-size:16px; font-weight:700; margin-bottom:16px; color:#f87171;"><i data-lucide="alert-triangle" size="16" style="vertical-align:middle;"></i> Danger Zone</h3>
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">These actions are irreversible.</p>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="btn btn-danger" onclick="clearHistory()"><i data-lucide="trash-2" size="14"></i> Clear History</button>
+                    <button class="btn btn-danger" onclick="clearAllData()"><i data-lucide="database-backup" size="14"></i> Clear All Data</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="page" id="page-history">
+            <div class="page-header">
+                <div class="page-title">
+                    <div class="breadcrumb"><i data-lucide="home" size="12"></i> › System</div>
+                    <h1>All History</h1>
+                    <p>Combined view of all transactions</p>
+                </div>
+                <div class="header-buttons">
+                    <button class="btn btn-danger" onclick="clearHistory()"><i data-lucide="trash-2" size="15"></i> Clear All</button>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <div class="table-header"><div><h3>Transaction Log</h3><p>Newest first</p></div></div>
+                <table>
+                    <thead><tr><th>Category</th><th>Method</th><th>Amount</th><th>TrxID</th><th>Phone</th><th>Status</th><th>Time</th><th>Actions</th></tr></thead>
+                    <tbody id="allHistoryBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</div>
+
+<div class="modal-backdrop" id="firebaseConfigModal">
+    <div class="modal" style="max-width: 580px;">
+        <h3><i data-lucide="flame" size="18" style="vertical-align:middle; color:var(--accent);"></i> Firebase Configuration</h3>
+        <p class="modal-sub">Change your Firebase if needed (already defaults to your project)</p>
+        <div class="form-group">
+            <label class="form-label">Quick Setup — Paste Config</label>
+            <textarea id="fbPasteConfig" class="form-textarea" placeholder='Paste your Firebase config object here'></textarea>
+            <button class="btn btn-sm" style="margin-top:8px;" onclick="parsePastedConfig()"><i data-lucide="wand-2" size="12"></i> Auto-fill Fields</button>
+        </div>
+        <div style="border-top: 1px solid var(--border-color); margin: 18px 0;"></div>
+        <div class="form-group"><label class="form-label">API Key *</label><input type="text" id="fbApiKey" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Auth Domain</label><input type="text" id="fbAuthDomain" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Database URL *</label><input type="text" id="fbDbUrl" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Project ID</label><input type="text" id="fbProjectId" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Storage Bucket</label><input type="text" id="fbStorageBucket" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Messaging Sender ID</label><input type="text" id="fbSenderId" class="form-input"></div>
+        <div class="form-group"><label class="form-label">App ID</label><input type="text" id="fbAppId" class="form-input"></div>
+        <div class="form-actions">
+            <button class="btn" onclick="closeModal('firebaseConfigModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveFirebaseConfig()"><i data-lucide="save" size="14"></i> Save & Connect</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="userModal">
+    <div class="modal">
+        <h3 id="userModalTitle">Edit User</h3>
+        <p class="modal-sub">Update user credentials & info</p>
+        <input type="hidden" id="userEditIndex" value="-1">
+        <div class="form-group"><label class="form-label">Phone</label><input type="text" id="userEditPhone" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Name</label><input type="text" id="userEditName" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Password</label><input type="text" id="userEditPassword" class="form-input"></div>
+        <div class="form-group">
+            <label class="form-label">UID (6-digit) — leave blank to auto-generate</label>
+            <input type="text" id="userEditUid" class="form-input" placeholder="Auto (6 digits)" maxlength="6">
+        </div>
+        <div class="form-actions">
+            <button class="btn" onclick="closeModal('userModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveUserEdit()"><i data-lucide="save" size="14"></i> Save</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="adjustModal">
+    <div class="modal">
+        <h3 id="adjustTitle">Adjust Value</h3>
+        <p class="modal-sub">Set new value for the current session</p>
+        <div class="form-group"><label class="form-label">Current Value</label><input type="text" id="adjustCurrent" class="form-input" readonly></div>
+        <div class="form-group"><label class="form-label">New Value (৳)</label><input type="number" id="adjustNew" class="form-input" step="0.01"></div>
+        <div class="form-actions">
+            <button class="btn" onclick="closeModal('adjustModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="confirmAdjust()"><i data-lucide="check" size="14"></i> Update</button>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ FIX #1: Added User Phone field -->
+<div class="modal-backdrop" id="manualDepModal">
+    <div class="modal">
+        <h3>Manual Deposit</h3>
+        <p class="modal-sub">Credit a specific user's balance directly</p>
+        <div class="form-group">
+            <label class="form-label">User Phone *</label>
+            <input type="text" id="manDepPhone" class="form-input" placeholder="01XXXXXXXXX" maxlength="11">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Method</label>
+            <select id="manDepMethod" class="form-select">
+                <option value="bKash Go-Pay">bKash Go-Pay</option>
+                <option value="bKash Fast-Pay">bKash Fast-Pay</option>
+                <option value="Nagad Personal">Nagad</option>
+            </select>
+        </div>
+        <div class="form-group"><label class="form-label">Amount (৳)</label><input type="number" id="manDepAmount" class="form-input" placeholder="550" step="0.01"></div>
+        <div class="form-group"><label class="form-label">TrxID (optional)</label><input type="text" id="manDepTrx" class="form-input" placeholder="MANUAL123"></div>
+        <div class="form-actions">
+            <button class="btn" onclick="closeModal('manualDepModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="confirmManualDeposit()"><i data-lucide="plus" size="14"></i> Add Deposit</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="voucherModal">
+    <div class="modal">
+        <h3 id="voucherModalTitle">Add Gift Code</h3>
+        <p class="modal-sub">Create a new single-use voucher code</p>
+        <div class="form-group">
+            <label class="form-label">Code (Uppercase)</label>
+            <div class="code-display-box" style="margin-bottom:8px;">
+                <input type="text" id="voucherCode" class="code-display-val" placeholder="BAZAR100" style="text-transform:uppercase; background:transparent; border:none; outline:none; padding:0; width:100%; color:var(--gold); font-family:'Space Grotesk',monospace; font-size:18px; font-weight:700; letter-spacing:2px;">
+                <button class="random-gen-btn" onclick="generateRandomCode()"><i data-lucide="dice-5"></i> Random</button>
+            </div>
+        </div>
+        <div class="form-group"><label class="form-label">Reward (৳)</label><input type="number" id="voucherReward" class="form-input" placeholder="100"></div>
+        <div class="form-actions">
+            <button class="btn" onclick="closeModal('voucherModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="saveVoucher()"><i data-lucide="save" size="14"></i> Save</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="packageModal">
+    <div class="modal">
+        <h3 id="pkgModalTitle">Edit Package</h3>
+        <p class="modal-sub">Update package details — syncs to website instantly</p>
+        <input type="hidden" id="pkgEditIndex" value="-1">
+        <div class="form-group"><label class="form-label">Name</label><input type="text" id="pkgEditName" class="form-input"></div>
+        <div class="form-group">
+            <label class="form-label">Image URL</label>
+            <input type="text" id="pkgEditImage" class="form-input" oninput="previewPkgImage()">
+            <img id="pkgImagePreview" class="pkg-image-preview" alt="preview">
+        </div>
+        <div class="form-group"><label class="form-label">Price (৳)</label><input type="number" id="pkgEditPrice" class="form-input" step="1"></div>
+        <div class="form-group"><label class="form-label">Daily Bonus (৳) — credited each day</label><input type="number" id="pkgEditDaily" class="form-input" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Duration (days)</label><input type="number" id="pkgEditDays" class="form-input" step="1"></div>
+        <div class="form-group"><label class="form-label">Total Return (৳)</label><input type="number" id="pkgEditTotal" class="form-input" step="1"></div>
+        <div class="form-actions">
+            <button class="btn" onclick="closeModal('packageModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="savePackage()"><i data-lucide="save" size="14"></i> Save</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ============================================================
+   FIREBASE CONFIG
+============================================================ */
+const DEFAULT_FIREBASE_CONFIG = {
+    apiKey: "AIzaSyA30xd6czhjuuxNE7Vu39ejnvjP5XVI3I8",
+    authDomain: "takar-bazar-549dc.firebaseapp.com",
+    databaseURL: "https://takar-bazar-549dc-default-rtdb.firebaseio.com",
+    projectId: "takar-bazar-549dc",
+    storageBucket: "takar-bazar-549dc.firebasestorage.app",
+    messagingSenderId: "644593498302",
+    appId: "1:644593498302:web:2d8d279f6e4234762146ef"
+};
+
+let currentAdminEmail = '';
+let authSubscribed = false;
+
+function toggleAdminPass() {
+    const input = document.getElementById('adminLoginPass');
+    const icon = document.getElementById('adminLoginEyeIcon');
+    if (!input || !icon) return;
+    if (input.type === 'password') { input.type = 'text'; icon.setAttribute('data-lucide', 'eye-off'); }
+    else { input.type = 'password'; icon.setAttribute('data-lucide', 'eye'); }
+    lucide.createIcons();
+}
+function showLoginError(msg) {
+    const box = document.getElementById('loginErrorBox');
+    if (!box) return;
+    box.innerHTML = '<i data-lucide="alert-circle" style="width:16px;height:16px;flex-shrink:0;"></i><span>' + msg + '</span>';
+    box.style.display = 'flex';
+    lucide.createIcons();
+}
+function hideLoginError() { const box = document.getElementById('loginErrorBox'); if (box) box.style.display = 'none'; }
+function showAdminLogin() {
+    document.getElementById('adminLoginScreen').style.display = 'flex';
+    document.getElementById('adminPanelWrapper').style.display = 'none';
+    const form = document.getElementById('adminLoginForm');
+    if (form) form.reset();
+    hideLoginError();
+    lucide.createIcons();
+}
+function showAdminPanel() {
+    document.getElementById('adminLoginScreen').style.display = 'none';
+    document.getElementById('adminPanelWrapper').style.display = 'flex';
+    const nameEl = document.getElementById('topbarAdminName');
+    if (nameEl && currentAdminEmail) nameEl.textContent = currentAdminEmail.split('@')[0];
+    const emailEl = document.getElementById('settingsCurrentEmail');
+    if (emailEl) emailEl.textContent = currentAdminEmail || '—';
+    requestAnimationFrame(() => { renderOverview(); lucide.createIcons(); });
+}
+function getAuthErrorMessage(code, fallback) {
+    const messages = {
+        'auth/invalid-email': '❌ Email ফরম্যাট সঠিক নয়।',
+        'auth/user-not-found': '❌ এই Email দিয়ে কোনো অ্যাকাউন্ট নেই। Firebase Console → Authentication → Users চেক করুন।',
+        'auth/wrong-password': '❌ Password ভুল।',
+        'auth/invalid-credential': '❌ Email বা Password ভুল।',
+        'auth/invalid-login-credentials': '❌ Email বা Password ভুল।',
+        'auth/too-many-requests': '🚫 অনেকবার চেষ্টা — কিছুক্ষণ পর আবার চেষ্টা করুন।',
+        'auth/network-request-failed': '🌐 ইন্টারনেট সংযোগ চেক করুন।',
+        'auth/user-disabled': '🚫 এই অ্যাকাউন্ট বন্ধ করা হয়েছে।',
+        'auth/operation-not-allowed': '⚙️ Firebase Console-এ Email/Password provider enable করুন।',
+        'auth/admin-restricted-operation': '⚙️ Firebase Console-এ Email/Password provider enable করুন।'
+    };
+    return messages[code] || ('❌ Login ব্যর্থ: ' + (fallback || code || 'unknown error'));
+}
+async function handleAdminLogin(e) {
+    e.preventDefault();
+    hideLoginError();
+    const email = document.getElementById('adminLoginEmail').value.trim();
+    const password = document.getElementById('adminLoginPass').value;
+    if (!email || !password) { showLoginError('Email এবং Password দুটোই দিন।'); return; }
+    const btn = document.getElementById('adminLoginBtn');
+    if (btn) btn.disabled = true;
+    try {
+        if (!firebase.apps.length) firebase.initializeApp(DEFAULT_FIREBASE_CONFIG);
+        await firebase.auth().signInWithEmailAndPassword(email, password);
+        showToast('Welcome back ✓', 'success');
+    } catch (err) {
+        console.error('Login error:', err);
+        showLoginError(getAuthErrorMessage(err.code, err.message));
+        const passEl = document.getElementById('adminLoginPass');
+        if (passEl) passEl.value = '';
+    }
+    if (btn) btn.disabled = false;
+}
+function handleAdminLogout() {
+    if (!confirm('Logout from admin panel?')) return;
+    try {
+        firebase.auth().signOut()
+            .then(() => showToast('Logged out', 'info'))
+            .catch(err => showToast('Logout failed: ' + err.message, 'error'));
+    } catch(e) { showAdminLogin(); }
+}
+async function sendPasswordResetEmail() {
+    if (!currentAdminEmail) { showToast('কোনো email লগইন নেই', 'error'); return; }
+    if (!confirm('Password reset link পাঠাবেন ' + currentAdminEmail + ' এ?')) return;
+    try {
+        await firebase.auth().sendPasswordResetEmail(currentAdminEmail);
+        showToast('✓ Reset link পাঠানো হয়েছে — আপনার Email চেক করুন', 'success');
+    } catch (err) { showToast('ব্যর্থ: ' + (err.message || err.code), 'error'); }
+}
+function subscribeAuthState() {
+    if (authSubscribed || !firebase.apps.length) return;
+    authSubscribed = true;
+    firebase.auth().onAuthStateChanged(user => {
+        if (user) { currentAdminEmail = user.email || ''; showAdminPanel(); }
+        else { currentAdminEmail = ''; showAdminLogin(); }
+    });
+}
+
+/* ============================================================
+   FIREBASE SYNC
+============================================================ */
+const FB_PATH_MAP = {
+    'tb_users': 'users', 'tb_balance': 'session/balance', 'tb_deposit': 'session/deposit',
+    'tb_plan_earnings': 'session/planEarnings', 'tb_income': 'session/income',
+    'tb_has_bought_plan': 'session/hasBoughtPlan', 'tb_active_plans': 'session/activePlans',
+    'tb_redeemed_vouchers': 'session/redeemedVouchers', 'tb_linked_payment_acc': 'session/linkedPaymentAccount',
+    'tb_profile_name': 'session/profileName', 'tb_profile_avatar': 'session/profileAvatar',
+    'tb_user_id': 'session/userId', 'tb_uid': 'session/uid', 'tb_is_logged_in': 'session/isLoggedIn',
+    'tb_current_phone': 'session/currentPhone', 'aw_history_records': 'history',
+    'tb_packages_catalog': 'packages', 'tb_valid_vouchers': 'vouchers', 'tb_admin_settings': 'settings'
+};
+const ARRAY_KEYS = ['tb_users', 'tb_active_plans', 'tb_redeemed_vouchers', 'aw_history_records', 'tb_packages_catalog'];
+
+function toArray(v) {
+    if (!v) return [];
+    if (Array.isArray(v)) return v;
+    if (typeof v === 'object') return Object.values(v).filter(x => x !== null && x !== undefined);
+    return [];
+}
+
+let fbReady = false, fbDb = null, isRemoteUpdate = false;
+
+function tryInitFirebase() {
+    let config = DB.getJSON('tb_firebase_config', null);
+    if (!config || !config.apiKey || !config.databaseURL) {
+        config = DEFAULT_FIREBASE_CONFIG;
+        DB.setJSON('tb_firebase_config', config);
+    }
+    try {
+        if (fbDb) { try { Object.values(FB_PATH_MAP).forEach(path => fbDb.ref(path).off()); } catch(e) {} }
+        if (firebase.apps.length > 0) { try { firebase.app().delete(); } catch(e) {} }
+        firebase.initializeApp(config);
+        fbDb = firebase.database();
+        fbReady = true;
+        updateFbStatus(true);
+        attachFbListeners();
+        return true;
+    } catch(e) {
+        fbReady = false;
+        updateFbStatus(false);
+        return false;
+    }
+}
+function normalizeUsersArray(raw) {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw.filter(u => u && u.phone);
+    if (typeof raw === 'object') {
+        return Object.entries(raw).map(([key, u]) => {
+            if (!u || typeof u !== 'object') return null;
+            return Object.assign({}, u, { phone: u.phone || key });
+        }).filter(u => u && u.phone);
+    }
+    return [];
+}
+function attachFbListeners() {
+    if (!fbReady || !fbDb) return;
+    Object.entries(FB_PATH_MAP).forEach(([localKey, path]) => {
+        fbDb.ref(path).on('value', (snap) => {
+            const val = snap.val();
+            if (val === null || val === undefined) return;
+            let strVal;
+            if (localKey === 'tb_users') strVal = JSON.stringify(normalizeUsersArray(val));
+            else if (ARRAY_KEYS.includes(localKey)) strVal = JSON.stringify(toArray(val));
+            else if (typeof val === 'object') strVal = JSON.stringify(val);
+            else if (typeof val === 'boolean') strVal = val.toString();
+            else strVal = String(val);
+            try { localStorage.setItem(localKey, strVal); } catch(e) {}
+            const ae = document.activeElement;
+            const isEditing = ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT');
+            if (!isEditing) {
+                isRemoteUpdate = true;
+                const cur = document.querySelector('.page.active');
+                if (cur) {
+                    const pageName = cur.id.replace('page-', '');
+                    if (pageRenderers[pageName]) pageRenderers[pageName]();
+                }
+                isRemoteUpdate = false;
+            }
+        });
+    });
+}
+function updateFbStatus(connected) {
+    const badge = document.getElementById('fbStatusBadge');
+    const text = document.getElementById('fbStatusText');
+    if (badge && text) {
+        if (connected) { badge.classList.add('live'); text.textContent = 'Live'; }
+        else { badge.classList.remove('live'); text.textContent = 'Local'; }
+    }
+    const sBadge = document.getElementById('fbSettingsStatus');
+    const sText = document.getElementById('fbSettingsStatusText');
+    const sProj = document.getElementById('fbSettingsProject');
+    const sBtn = document.getElementById('fbBtnLabel');
+    const sDis = document.getElementById('fbDisconnectBtn');
+    if (sBadge && sText) {
+        if (connected) {
+            sBadge.classList.add('live');
+            sText.textContent = 'Connected';
+            const cfg = DB.getJSON('tb_firebase_config', {});
+            if (sProj) sProj.textContent = cfg.projectId ? 'Project: ' + cfg.projectId : '';
+            if (sBtn) sBtn.textContent = 'Change Config';
+            if (sDis) sDis.style.display = 'inline-flex';
+        } else {
+            sBadge.classList.remove('live');
+            sText.textContent = 'Not Connected';
+            if (sProj) sProj.textContent = '';
+            if (sBtn) sBtn.textContent = 'Configure Firebase';
+            if (sDis) sDis.style.display = 'none';
+        }
+    }
+    try { lucide.createIcons(); } catch(e) {}
+}
+function openFirebaseConfigModal() {
+    const cfg = DB.getJSON('tb_firebase_config', DEFAULT_FIREBASE_CONFIG);
+    document.getElementById('fbApiKey').value = cfg.apiKey || '';
+    document.getElementById('fbAuthDomain').value = cfg.authDomain || '';
+    document.getElementById('fbDbUrl').value = cfg.databaseURL || '';
+    document.getElementById('fbProjectId').value = cfg.projectId || '';
+    document.getElementById('fbStorageBucket').value = cfg.storageBucket || '';
+    document.getElementById('fbSenderId').value = cfg.messagingSenderId || '';
+    document.getElementById('fbAppId').value = cfg.appId || '';
+    openModal('firebaseConfigModal');
+}
+function parsePastedConfig() {
+    const raw = document.getElementById('fbPasteConfig').value.trim();
+    if (!raw) { showToast('Paste config first', 'error'); return; }
+    const fields = { apiKey: 'fbApiKey', authDomain: 'fbAuthDomain', databaseURL: 'fbDbUrl', projectId: 'fbProjectId', storageBucket: 'fbStorageBucket', messagingSenderId: 'fbSenderId', appId: 'fbAppId' };
+    let found = 0;
+    Object.entries(fields).forEach(([key, inputId]) => {
+        const regex = new RegExp(key + '\\s*[:=]\\s*["\']([^"\']+)["\']');
+        const match = raw.match(regex);
+        if (match) { document.getElementById(inputId).value = match[1]; found++; }
+    });
+    if (found > 0) showToast('Auto-filled ' + found + ' fields ✓', 'success');
+    else showToast('Could not detect fields', 'error');
+}
+function saveFirebaseConfig() {
+    const config = {
+        apiKey: document.getElementById('fbApiKey').value.trim(),
+        authDomain: document.getElementById('fbAuthDomain').value.trim(),
+        databaseURL: document.getElementById('fbDbUrl').value.trim(),
+        projectId: document.getElementById('fbProjectId').value.trim(),
+        storageBucket: document.getElementById('fbStorageBucket').value.trim(),
+        messagingSenderId: document.getElementById('fbSenderId').value.trim(),
+        appId: document.getElementById('fbAppId').value.trim()
+    };
+    if (!config.apiKey || !config.databaseURL) { showToast('API Key & Database URL required', 'error'); return; }
+    DB.setJSON('tb_firebase_config', config);
+    if (tryInitFirebase()) { showToast('🔥 Connected ✓', 'success'); closeModal('firebaseConfigModal'); }
+    else showToast('Connection failed', 'error');
+}
+function disconnectFirebase() {
+    if (!confirm('Disconnect from Firebase?')) return;
+    DB.del('tb_firebase_config');
+    if (fbDb) { try { Object.values(FB_PATH_MAP).forEach(path => fbDb.ref(path).off()); } catch(e) {} }
+    fbReady = false; fbDb = null;
+    updateFbStatus(false);
+    showToast('Disconnected', 'info');
+}
+
+const DB = {
+    get(k, d = '') { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch(e) { return d; } },
+    set(k, v) {
+        try { localStorage.setItem(k, String(v)); } catch(e) { return false; }
+        if (fbReady && fbDb && !isRemoteUpdate && FB_PATH_MAP[k]) {
+            try {
+                let parsed = v;
+                if (typeof v === 'string') {
+                    try { const j = JSON.parse(v); if (typeof j === 'object' && j !== null) parsed = j; } catch(e) {}
+                }
+                if (k === 'tb_users' && Array.isArray(parsed)) {
+                    const obj = {};
+                    parsed.forEach(u => { if (u && u.phone) obj[u.phone] = u; });
+                    parsed = obj;
+                }
+                fbDb.ref(FB_PATH_MAP[k]).set(parsed);
+            } catch(e) { console.warn('FB write error:', e); }
+        }
+        return true;
+    },
+    getJSON(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch(e) { return d; } },
+    setJSON(k, v) { return DB.set(k, JSON.stringify(v)); },
+    del(k) { try { localStorage.removeItem(k); } catch(e) {} }
+};
+
+const KEYS = {
+    users: 'tb_users', balance: 'tb_balance', deposit: 'tb_deposit',
+    planEarnings: 'tb_plan_earnings', income: 'tb_income', hasBoughtPlan: 'tb_has_bought_plan',
+    activePlans: 'tb_active_plans', vouchersRedeemed: 'tb_redeemed_vouchers', paymentAcc: 'tb_linked_payment_acc',
+    profileName: 'tb_profile_name', userId: 'tb_user_id', isLoggedIn: 'tb_is_logged_in',
+    currentPhone: 'tb_current_phone', history: 'aw_history_records', packages: 'tb_packages_catalog',
+    validVouchers: 'tb_valid_vouchers', settings: 'tb_admin_settings'
+};
+
+const DEFAULT_PACKAGES = [
+    { id: 1, category: "starter", categoryName: "🌱 স্টার্টার", name: "টাকা বিট নোড", price: 550, days: 7, daily: 120, total: 840, hourly: 5,
+      image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=500&q=75" },
+    { id: 2, category: "growth", categoryName: "⚡ গ্রোথ", name: "গোল্ড ভল্ট প্রো", price: 1500, days: 7, daily: 350, total: 2450, hourly: 14.58,
+      image: "https://images.unsplash.com/photo-1610375461246-83df859d8499?auto=format&fit=crop&w=500&q=75" }
+];
+const DEFAULT_VOUCHERS = { 'BAZAR50': 50, 'WELCOME100': 100, 'TAKA30': 30, 'PRIME10': 10, 'TBONUS50': 50 };
+const DEFAULT_SETTINGS = {
+    bkashGoPay: '01816328381', bkashFastPay: '01816328382', nagadNumber: '01816328383',
+    minDeposit: 550, minWithdraw: 120, signupBonus: 120, referralPercent: 20, tax: 10
+};
+
+function fmt(n) { return Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function fmt0(n) { return Number(n || 0).toLocaleString('en-IN'); }
+function fmtK(n) { n = Number(n || 0); if (n >= 1000000) return (n/1000000).toFixed(2) + 'M'; if (n >= 1000) return (n/1000).toFixed(1) + 'K'; return n.toFixed(0); }
+function showToast(msg, type = 'info') {
+    const box = document.getElementById('toastBox');
+    if (!box) return;
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.textContent = msg;
+    box.appendChild(t);
+    setTimeout(() => t.remove(), 3200);
+}
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+function getUsers() { return normalizeUsersArray(DB.getJSON(KEYS.users, [])); }
+function setUsers(u) { DB.setJSON(KEYS.users, Array.isArray(u) ? u : []); }
+function getHistory() { return toArray(DB.getJSON(KEYS.history, [])); }
+function setHistory(h) { DB.setJSON(KEYS.history, h); }
+function getPackages() {
+    const p = toArray(DB.getJSON(KEYS.packages, null));
+    return (p && p.length) ? p : DEFAULT_PACKAGES.slice();
+}
+function setPackages(p) { DB.setJSON(KEYS.packages, p); }
+function getVouchers() {
+    const v = DB.getJSON(KEYS.validVouchers, null);
+    return (v && typeof v === 'object' && Object.keys(v).length) ? v : DEFAULT_VOUCHERS;
+}
+function setVouchers(v) { DB.setJSON(KEYS.validVouchers, v); }
+function getSettings() {
+    const s = DB.getJSON(KEYS.settings, null);
+    return s ? { ...DEFAULT_SETTINGS, ...s } : DEFAULT_SETTINGS;
+}
+function setSettings(s) { DB.setJSON(KEYS.settings, s); }
+
+/* ============================================================
+   ✅ FIX #2: PER-USER CREDIT HELPERS
+============================================================ */
+function creditUserFields(phone, deltas, markerField, markerKey) {
+    if (!phone) return false;
+    const users = getUsers();
+    let found = false;
+    for (let i = 0; i < users.length; i++) {
+        if (users[i] && users[i].phone === phone) {
+            Object.keys(deltas).forEach(field => {
+                users[i][field] = (parseFloat(users[i][field]) || 0) + deltas[field];
+            });
+            if (markerField && markerKey) {
+                if (!Array.isArray(users[i][markerField])) users[i][markerField] = [];
+                if (!users[i][markerField].includes(markerKey)) {
+                    users[i][markerField].push(markerKey);
+                }
+            }
+            found = true;
+            break;
+        }
+    }
+    if (found) setUsers(users);
+    return found;
+}
+function depositMarkerKey(h) { return h.trx || ('T_' + h.time + '_' + h.amount); }
+function withdrawMarkerKey(h) { return (h.trx || '') + '|' + h.time + '|' + h.amount; }
+
+function getTimestamp() {
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+const pageRenderers = {
+    overview: renderOverview, users: renderUsers, deposits: renderDeposits, withdraws: renderWithdraws,
+    packages: renderPackages, vouchers: renderVouchers, settings: renderSettings, history: renderHistory
+};
+function goToPage(page) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const navItem = document.querySelector(`.nav-item[data-page="${page}"]`);
+    if (navItem) navItem.classList.add('active');
+    const pageEl = document.getElementById('page-' + page);
+    if (pageEl) pageEl.classList.add('active');
+    if (pageRenderers[page]) pageRenderers[page]();
+}
+document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+    item.addEventListener('click', () => goToPage(item.dataset.page));
+});
+document.getElementById('sidebarLogoutBtn').addEventListener('click', handleAdminLogout);
+
+const dashCharts = { revenue: null, customer: null, goal: null, conversion: null };
+
+function renderOverview() {
+    const users = getUsers();
+    const history = getHistory();
+    const activePlans = toArray(DB.getJSON(KEYS.activePlans, []));
+    const deposits = history.filter(h => h && h.category === 'Deposit');
+    const withdraws = history.filter(h => h && h.category === 'Withdraw');
+    const totalDeposited = deposits.reduce((s, d) => s + parseFloat(d.amount || 0), 0);
+    const totalWithdrawn = withdraws.reduce((s, d) => s + parseFloat(d.amount || 0), 0);
+    const totalTxns = history.length;
+    const avgOrder = totalTxns > 0 ? (totalDeposited + totalWithdrawn) / totalTxns : 0;
+    const settings = getSettings();
+
+    const last7 = [], dayNames = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        dayNames.push(d.toLocaleDateString('en-US', { weekday: 'short' }));
+        const dayDeps = deposits.filter(t => (t.time||'').startsWith(ds));
+        const dayWits = withdraws.filter(t => (t.time||'').startsWith(ds));
+        last7.push({ date: ds, depositSum: dayDeps.reduce((s,x) => s + parseFloat(x.amount||0), 0), withdrawSum: dayWits.reduce((s,x) => s + parseFloat(x.amount||0), 0), count: dayDeps.length + dayWits.length });
+    }
+    const weekTxnCount = last7.reduce((s,d) => s + d.count, 0);
+    const maxDayCount = Math.max(...last7.map(d => d.count), 1);
+    const peakDayIdx = last7.reduce((mx, d, i, arr) => d.count > arr[mx].count ? i : mx, 0);
+    const weekDepositSum = last7.reduce((s,d) => s + d.depositSum, 0);
+    const weekWithdrawSum = last7.reduce((s,d) => s + d.withdrawSum, 0);
+    const peakDepositIdx = last7.reduce((mx, d, i, arr) => d.depositSum > arr[mx].depositSum ? i : mx, 0);
+
+    const now = new Date();
+    const monthPrefix = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const monthDepSum = deposits.filter(t => (t.time||'').startsWith(monthPrefix)).reduce((s,x) => s + parseFloat(x.amount||0), 0);
+    const monthGoal = 50000;
+    const monthPct = Math.min(Math.round(monthDepSum / monthGoal * 100), 100);
+    const convRate = totalTxns > 0 ? Math.round((deposits.length / totalTxns) * 100 * 10) / 10 : 0;
+    const weekPct = Math.min(Math.round(weekDepositSum / 50000 * 100), 100);
+
+    document.getElementById('dashCards').innerHTML = `
+        <div class="dash-card">
+            <div class="glowing-orb"></div><div class="glowing-orb-inner"></div>
+            <div class="dash-card-header" style="position:relative; z-index:2;">
+                <div><div class="dash-card-title">Total Deposits</div><div class="dash-card-subtitle">Total Revenue</div></div>
+                <div class="dash-card-actions"><button class="dash-card-icon-btn"><i data-lucide="bell" size="14"></i></button><button class="dash-card-icon-btn"><i data-lucide="sparkles" size="14"></i></button></div>
+            </div>
+            <div style="position:relative; z-index:2;">
+                <div class="dash-main-value">৳${fmtK(totalDeposited)}</div>
+                <div class="dash-sub-stats"><span>Txns <strong style="color:#fff">${totalTxns}</strong></span><span>Avg <strong style="color:#fff">৳${fmtK(avgOrder)}</strong></span></div>
+                <div class="dash-stat-change"><i data-lucide="trending-up" size="14"></i> +${deposits.length} deposits</div>
+                <div class="chart-container" style="height: 80px; margin-top:10px;"><canvas id="dashRevenueChart"></canvas></div>
+            </div>
+        </div>
+        <div class="dash-card">
+            <div class="dash-card-header">
+                <div><div class="dash-card-title">Total customers</div><div class="dash-card-subtitle">Customer Growth</div></div>
+                <div class="dash-card-actions"><button class="dash-card-icon-btn"><i data-lucide="bell" size="14"></i></button><button class="dash-card-icon-btn"><i data-lucide="sparkles" size="14"></i></button></div>
+            </div>
+            <div class="dash-main-value">${users.length}</div>
+            <div class="dash-stat-change"><i data-lucide="arrow-up-right" size="14"></i> ${totalTxns} total activity</div>
+            <div class="chart-container" style="height: 100px; margin-top: 20px;"><canvas id="dashCustomerChart"></canvas></div>
+        </div>
+        <div class="dash-card">
+            <div class="dash-card-header">
+                <div><div class="dash-card-title">Last 7 days</div><div class="dash-card-subtitle">Weekly Activity</div></div>
+                <div class="dash-card-actions"><button class="dash-card-icon-btn"><i data-lucide="bell" size="14"></i></button><button class="dash-card-icon-btn"><i data-lucide="sparkles" size="14"></i></button></div>
+            </div>
+            <div class="dash-main-value">${weekTxnCount}</div>
+            <div class="dash-stat-change"><i data-lucide="arrow-up-right" size="14"></i> Peak: ${dayNames[peakDayIdx]}</div>
+            <div class="bar-chart-visual">${last7.map((d, i) => `<div class="bar ${i === peakDayIdx ? 'active' : ''}" style="height: ${Math.max((d.count / maxDayCount) * 100, 15)}%"></div>`).join('')}</div>
+            <div class="days-labels">${dayNames.map((n, i) => `<span class="${i === peakDayIdx ? 'highlight' : ''}">${n}</span>`).join('')}</div>
+        </div>
+        <div class="dash-card">
+            <div class="dash-card-header">
+                <div><div class="dash-card-title">This week</div><div class="dash-card-subtitle">Total Sales</div></div>
+                <div class="dash-card-actions"><button class="dash-card-icon-btn"><i data-lucide="bell" size="14"></i></button><button class="dash-card-icon-btn"><i data-lucide="sparkles" size="14"></i></button></div>
+            </div>
+            <div class="dash-main-value">৳${fmtK(weekDepositSum)}</div>
+            <div class="dash-sub-stats"><span>Withdraws <strong style="color:#f87171">৳${fmtK(weekWithdrawSum)}</strong></span></div>
+            <div class="progress-container"><div class="progress-bar" style="width: ${weekPct}%"><div class="progress-knob"></div></div></div>
+            <div class="days-labels" style="margin-top: 15px;">${dayNames.map((n, i) => `<span class="${i === peakDepositIdx ? 'highlight' : ''}">${n}</span>`).join('')}</div>
+        </div>
+        <div class="dash-card">
+            <div class="dash-card-header">
+                <div><div class="dash-card-title">Revenue target</div><div class="dash-card-subtitle">Monthly Goal</div></div>
+                <div class="dash-card-actions"><button class="dash-card-icon-btn"><i data-lucide="bell" size="14"></i></button><button class="dash-card-icon-btn"><i data-lucide="sparkles" size="14"></i></button></div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 15px;">
+                <div class="donut-chart-container"><canvas id="dashGoalChart"></canvas><div class="donut-center-text">${monthPct}%</div></div>
+                <div style="text-align: right;"><div style="font-size: 24px; font-weight: bold;">৳${fmtK(monthDepSum)}</div><div style="font-size: 12px; color: var(--text-muted);">of ৳${fmtK(monthGoal)}</div></div>
+            </div>
+        </div>
+        <div class="dash-card">
+            <div class="dash-card-header">
+                <div><div class="dash-card-title">Deposit ratio</div><div class="dash-card-subtitle">Conversion Rate</div></div>
+                <div class="dash-card-actions"><button class="dash-card-icon-btn"><i data-lucide="bell" size="14"></i></button><button class="dash-card-icon-btn"><i data-lucide="sparkles" size="14"></i></button></div>
+            </div>
+            <div class="donut-chart-container" style="margin-top: 15px; width: 140px; height: 140px;"><canvas id="dashConversionChart"></canvas><div class="donut-center-text" style="font-size: 22px;">${convRate}%</div></div>
+            <div style="text-align: center; margin-top: 10px; color: var(--green); font-size: 12px;"><i data-lucide="arrow-up-right" size="12" style="vertical-align: middle;"></i> ${activePlans.length} active plan${activePlans.length !== 1 ? 's' : ''} · Ref ${settings.referralPercent}%</div>
+        </div>`;
+
+    const recent = history.slice(-10).reverse();
+    const tbody = document.getElementById('recentTxBody');
+    if (!recent.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--text-muted);">No transactions yet</td></tr>';
+    } else {
+        tbody.innerHTML = recent.map(h => {
+            const catBadge = h.category === 'Deposit' ? 'badge-green' : h.category === 'Withdraw' ? 'badge-red' : 'badge-orange';
+            let statusBadge = 'badge-green';
+            if (h.status === 'Pending') statusBadge = 'badge-yellow';
+            else if (h.status === 'Failed' || h.status === 'Rejected') statusBadge = 'badge-red';
+            return `<tr>
+                <td><span class="badge ${catBadge}">${h.category}</span></td>
+                <td><span class="badge badge-gray">${h.method || h.type || '—'}</span></td>
+                <td style="color:var(--text-main); font-weight:700;">৳${fmt(h.amount)}</td>
+                <td style="font-family:monospace; font-size:11.5px; color:var(--gold);">${h.trx || '—'}</td>
+                <td><span class="badge ${statusBadge}">${h.status || 'Complete'}</span></td>
+                <td style="font-size:11.5px;">${h.time || '—'}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    lucide.createIcons();
+
+    requestAnimationFrame(() => {
+        try {
+            if (dashCharts.revenue) { try { dashCharts.revenue.destroy(); } catch(e){} }
+            const revCtx = document.getElementById('dashRevenueChart');
+            if (revCtx) {
+                const ctx = revCtx.getContext('2d');
+                const grad = ctx.createLinearGradient(0, 0, 0, 80);
+                grad.addColorStop(0, 'rgba(249, 115, 22, 0.4)');
+                grad.addColorStop(1, 'rgba(249, 115, 22, 0)');
+                dashCharts.revenue = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: last7.map((_, i) => i + 1), datasets: [{ data: last7.map(d => d.depositSum), borderColor: '#f97316', borderWidth: 2, backgroundColor: grad, fill: true, tension: 0.4, pointRadius: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false, min: 0 } } }
+                });
+            }
+            if (dashCharts.customer) { try { dashCharts.customer.destroy(); } catch(e){} }
+            const custCtx = document.getElementById('dashCustomerChart');
+            if (custCtx) {
+                dashCharts.customer = new Chart(custCtx.getContext('2d'), {
+                    type: 'line',
+                    data: { labels: dayNames, datasets: [{ data: last7.map(d => d.count), borderColor: '#f97316', borderWidth: 2, tension: 0.4, pointRadius: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false, min: 0 } } }
+                });
+            }
+            if (dashCharts.goal) { try { dashCharts.goal.destroy(); } catch(e){} }
+            const goalCtx = document.getElementById('dashGoalChart');
+            if (goalCtx) {
+                dashCharts.goal = new Chart(goalCtx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: { datasets: [{ data: [monthPct, 100 - monthPct], backgroundColor: ['#f97316', '#27272a'], borderWidth: 0, cutout: '80%' }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+                });
+            }
+            if (dashCharts.conversion) { try { dashCharts.conversion.destroy(); } catch(e){} }
+            const convCtx = document.getElementById('dashConversionChart');
+            if (convCtx) {
+                dashCharts.conversion = new Chart(convCtx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: { datasets: [{ data: [convRate, 100 - convRate], backgroundColor: ['#f97316', '#27272a'], borderWidth: 0, cutout: '80%' }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+                });
+            }
+            lucide.createIcons();
+        } catch(e) { console.warn('Chart error:', e); }
+    });
+}
+
+function renderUsers() {
+    const users = getUsers();
+    document.getElementById('usersCount').textContent = '(' + users.length + ')';
+    const tbody = document.getElementById('usersBody');
+    if (!users.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-muted);">No users yet</td></tr>';
+    } else {
+        tbody.innerHTML = users.map((u, i) => `
+            <tr>
+                <td style="color:var(--text-main); font-weight:600;">${u.phone || '—'}</td>
+                <td>${u.name || '—'}</td>
+                <td style="font-family:monospace;">${u.password || '—'}</td>
+                <td style="font-family:monospace; font-size:11px; color:var(--gold);">${u.uid || '—'}</td>
+                <td><div class="row-actions">
+                    <button class="btn btn-xs" onclick="editUser(${i})"><i data-lucide="pencil" size="12"></i> Edit</button>
+                    <button class="btn btn-xs btn-danger" onclick="deleteUser(${i})"><i data-lucide="trash-2" size="12"></i> Delete</button>
+                </div></td>
+            </tr>`).join('');
+    }
+    document.getElementById('sessionBalance').textContent = fmt(DB.get(KEYS.balance, '0'));
+    document.getElementById('sessionDeposit').textContent = fmt(DB.get(KEYS.deposit, '0'));
+    document.getElementById('sessionIncome').textContent = fmt(DB.get(KEYS.income, '0'));
+    document.getElementById('sessionPlanEarnings').textContent = fmt(DB.get(KEYS.planEarnings, '0'));
+    const hasBought = DB.get(KEYS.hasBoughtPlan, 'false') === 'true';
+    const statusEl = document.getElementById('sessionWithdrawStatus');
+    if (statusEl) {
+        if (hasBought) statusEl.innerHTML = '<span class="badge badge-green">🔓 Unlocked</span>';
+        else statusEl.innerHTML = '<span class="badge badge-red">🔒 Locked</span>';
+    }
+    const activePlans = toArray(DB.getJSON(KEYS.activePlans, []));
+    document.getElementById('sessionPlansCount').textContent = activePlans.length;
+    lucide.createIcons();
+}
+function openAddUserModal() {
+    document.getElementById('userModalTitle').textContent = 'Add User';
+    document.getElementById('userEditIndex').value = -1;
+    document.getElementById('userEditPhone').value = '';
+    document.getElementById('userEditName').value = '';
+    document.getElementById('userEditPassword').value = '';
+    document.getElementById('userEditUid').value = '';
+    openModal('userModal');
+}
+function editUser(i) {
+    const u = getUsers()[i];
+    if (!u) return;
+    document.getElementById('userModalTitle').textContent = 'Edit User';
+    document.getElementById('userEditIndex').value = i;
+    document.getElementById('userEditPhone').value = u.phone || '';
+    document.getElementById('userEditName').value = u.name || '';
+    document.getElementById('userEditPassword').value = u.password || '';
+    document.getElementById('userEditUid').value = u.uid || '';
+    openModal('userModal');
+}
+function generateSixDigitUid() { return String(Math.floor(100000 + Math.random() * 900000)); }
+function saveUserEdit() {
+    const idx = parseInt(document.getElementById('userEditIndex').value);
+    const phone = document.getElementById('userEditPhone').value.trim();
+    const name = document.getElementById('userEditName').value.trim();
+    const password = document.getElementById('userEditPassword').value.trim();
+    let uid = document.getElementById('userEditUid').value.trim();
+    if (!phone || !password) { showToast('Phone and password required', 'error'); return; }
+    if (uid && !/^\d{6}$/.test(uid)) { showToast('UID must be exactly 6 digits', 'error'); return; }
+    if (!uid) uid = generateSixDigitUid();
+    const users = getUsers();
+    if (idx === -1) {
+        if (users.some(u => u.phone === phone)) { showToast('Phone already exists', 'error'); return; }
+        users.push({ phone, name: name || 'User', password, uid });
+        showToast('User added — UID ' + uid, 'success');
+    } else {
+        users[idx] = { ...users[idx], phone, name, password, uid };
+        showToast('User updated', 'success');
+    }
+    setUsers(users);
+    closeModal('userModal');
+    renderUsers();
+}
+function deleteUser(i) {
+    if (!confirm('Delete this user?')) return;
+    const users = getUsers();
+    users.splice(i, 1);
+    setUsers(users);
+    renderUsers();
+    showToast('User deleted', 'success');
+}
+
+let adjustTargetKey = null, adjustTargetLabel = '';
+function adjustGlobal(key, label) {
+    adjustTargetKey = key; adjustTargetLabel = label;
+    document.getElementById('adjustTitle').textContent = 'Adjust ' + label;
+    document.getElementById('adjustCurrent').value = fmt(DB.get(key, '0'));
+    document.getElementById('adjustNew').value = DB.get(key, '0');
+    openModal('adjustModal');
+}
+function confirmAdjust() {
+    if (!adjustTargetKey) return;
+    const val = parseFloat(document.getElementById('adjustNew').value) || 0;
+    DB.set(adjustTargetKey, val.toFixed(2));
+    closeModal('adjustModal');
+    showToast(adjustTargetLabel + ' updated to ৳' + fmt(val), 'success');
+    renderUsers();
+    adjustTargetKey = null;
+}
+function toggleHasBoughtPlan() {
+    const current = DB.get(KEYS.hasBoughtPlan, 'false') === 'true';
+    DB.set(KEYS.hasBoughtPlan, (!current).toString());
+    showToast('Withdraw unlock → ' + (!current ? 'Unlocked' : 'Locked'), 'success');
+    renderUsers();
+}
+function clearActivePlans() {
+    if (!confirm('Clear all active plans for current session?')) return;
+    DB.setJSON(KEYS.activePlans, []);
+    showToast('Active plans cleared', 'success');
+    renderUsers();
+}
+function resetSession() {
+    if (!confirm('Reset entire user session state?')) return;
+    [KEYS.balance, KEYS.deposit, KEYS.planEarnings, KEYS.income, KEYS.hasBoughtPlan, KEYS.activePlans].forEach(k => DB.del(k));
+    DB.set(KEYS.isLoggedIn, 'false');
+    showToast('Session reset', 'success');
+    renderUsers();
+}
+
+/* ================= DEPOSITS ================= */
+let currentDepFilter = 'All';
+function filterDeposits(method, btn) {
+    currentDepFilter = method;
+    document.querySelectorAll('#page-deposits .filter-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderDeposits();
+}
+function renderDeposits() {
+    const history = getHistory();
+    let deposits = history.filter(h => h && h.category === 'Deposit');
+    if (currentDepFilter !== 'All') deposits = deposits.filter(d => (d.method || d.type || '') === currentDepFilter);
+    const tbody = document.getElementById('depositsBody');
+    if (!deposits.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--text-muted);">No deposits yet</td></tr>';
+        return;
+    }
+    tbody.innerHTML = deposits.slice().reverse().map(d => {
+        const idx = history.indexOf(d);
+        const methodName = d.method || d.type || '—';
+        let statusBadge = 'badge-green';
+        if (d.status === 'Pending') statusBadge = 'badge-yellow';
+        else if (d.status === 'Failed' || d.status === 'Rejected') statusBadge = 'badge-red';
+        const actions = d.status === 'Pending'
+            ? `<div class="row-actions">
+                <button class="btn btn-xs btn-success" onclick="approveDeposit(${idx})"><i data-lucide="check" size="12"></i> Approve</button>
+                <button class="btn btn-xs btn-danger" onclick="rejectDeposit(${idx})"><i data-lucide="x" size="12"></i> Reject</button>
+              </div>`
+            : `<button class="btn btn-xs btn-danger" onclick="deleteTx(${idx})"><i data-lucide="trash-2" size="12"></i></button>`;
+        return `<tr>
+            <td><span class="badge badge-orange">${methodName}</span></td>
+            <td style="color:var(--green); font-weight:700;">৳${fmt(d.amount)}</td>
+            <td style="font-family:monospace; font-size:11.5px;">${d.trx || '—'}</td>
+            <td style="font-size:11.5px;">${d.phone || '—'}</td>
+            <td><span class="badge ${statusBadge}">${d.status || 'Complete'}</span></td>
+            <td style="font-size:11.5px;">${d.time || '—'}</td>
+            <td>${actions}</td>
+        </tr>`;
+    }).join('');
+    lucide.createIcons();
+}
+
+/* ✅ FIX #3: approveDeposit credits per-user record */
+function approveDeposit(idx) {
+    const history = getHistory();
+    const h = history[idx];
+    if (!h || h.category !== 'Deposit' || h.status !== 'Pending') return;
+    if (!h.phone) { showToast('❌ এই ট্রানজেকশনে phone নেই — কে credit পাবে বোঝা যাচ্ছে না!', 'error'); return; }
+    if (!confirm(`Approve ৳${fmt(h.amount)} for ${h.phone}? Balance will be credited.`)) return;
+    const credited = creditUserFields(
+        h.phone,
+        { balance: parseFloat(h.amount), deposit: parseFloat(h.amount) },
+        'creditedDeposits',
+        depositMarkerKey(h)
+    );
+    if (!credited) { showToast('⚠️ User record not found for ' + h.phone, 'error'); return; }
+    h.status = 'Complete';
+    setHistory(history);
+    renderDeposits(); renderOverview(); renderHistory(); renderUsers();
+    showToast('✓ ৳' + fmt(h.amount) + ' credited to ' + h.phone, 'success');
+}
+function rejectDeposit(idx) {
+    const history = getHistory();
+    const h = history[idx];
+    if (!h || h.category !== 'Deposit' || h.status !== 'Pending') return;
+    if (!confirm(`Reject this deposit request?`)) return;
+    h.status = 'Failed';
+    setHistory(history);
+    renderDeposits(); renderOverview(); renderHistory();
+    showToast('✗ Deposit rejected', 'info');
+}
+function deleteTx(idx) {
+    if (!confirm('Delete this transaction record?')) return;
+    const history = getHistory();
+    history.splice(idx, 1);
+    setHistory(history);
+    renderDeposits(); renderWithdraws(); renderOverview(); renderHistory();
+    showToast('Transaction deleted', 'success');
+}
+
+/* ✅ FIX #6: openManualDepositModal pre-fills phone */
+function openManualDepositModal() {
+    const pEl = document.getElementById('manDepPhone');
+    if (pEl) pEl.value = DB.get(KEYS.currentPhone, '');
+    document.getElementById('manDepAmount').value = '';
+    document.getElementById('manDepTrx').value = '';
+    openModal('manualDepModal');
+}
+
+/* ✅ FIX #5: confirmManualDeposit credits correct user record */
+function confirmManualDeposit() {
+    const phone = (document.getElementById('manDepPhone') ? document.getElementById('manDepPhone').value.trim() : '');
+    const amount = parseFloat(document.getElementById('manDepAmount').value);
+    const method = document.getElementById('manDepMethod').value;
+    const trx = document.getElementById('manDepTrx').value.trim() || ('MANUAL' + Date.now().toString().slice(-6));
+    if (!phone || !/^01\d{9}$/.test(phone)) { showToast('Valid 11-digit phone required', 'error'); return; }
+    if (!amount || amount <= 0) { showToast('Invalid amount', 'error'); return; }
+    const users = getUsers();
+    const userRec = users.find(u => u && u.phone === phone);
+    if (!userRec) { showToast('❌ User not found: ' + phone, 'error'); return; }
+    const credited = creditUserFields(
+        phone,
+        { balance: amount, deposit: amount },
+        'creditedDeposits',
+        trx
+    );
+    if (!credited) { showToast('⚠️ Failed to credit user record', 'error'); return; }
+    const history = getHistory();
+    history.push({
+        category: 'Deposit', type: method.split(' ')[0], method: method,
+        amount, trx, status: 'Complete', time: getTimestamp(),
+        phone: phone, uid: userRec.uid || ''
+    });
+    setHistory(history);
+    closeModal('manualDepModal');
+    renderDeposits(); renderOverview(); renderUsers();
+    showToast('✓ ৳' + fmt(amount) + ' manually credited to ' + phone, 'success');
+}
+
+/* ================= WITHDRAWS ================= */
+let currentWitFilter = 'All';
+function filterWithdraws(method, btn) {
+    currentWitFilter = method;
+    document.querySelectorAll('#page-withdraws .filter-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderWithdraws();
+}
+function renderWithdraws() {
+    const history = getHistory();
+    let withdraws = history.filter(h => h && h.category === 'Withdraw');
+    if (currentWitFilter !== 'All') withdraws = withdraws.filter(d => (d.type || '').toLowerCase() === currentWitFilter.toLowerCase());
+    const tbody = document.getElementById('withdrawsBody');
+    if (!withdraws.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--text-muted);">No withdrawals yet</td></tr>';
+        return;
+    }
+    tbody.innerHTML = withdraws.slice().reverse().map(d => {
+        const idx = history.indexOf(d);
+        const methodName = d.method || d.type || '—';
+        let statusBadge = 'badge-green';
+        if (d.status === 'Pending') statusBadge = 'badge-yellow';
+        else if (d.status === 'Failed' || d.status === 'Rejected') statusBadge = 'badge-red';
+        const actions = d.status === 'Pending'
+            ? `<div class="row-actions">
+                <button class="btn btn-xs btn-success" onclick="approveWithdraw(${idx})"><i data-lucide="check" size="12"></i> Approve</button>
+                <button class="btn btn-xs btn-danger" onclick="rejectWithdraw(${idx})"><i data-lucide="x" size="12"></i> Refund</button>
+              </div>`
+            : `<button class="btn btn-xs btn-danger" onclick="deleteTx(${idx})"><i data-lucide="trash-2" size="12"></i></button>`;
+        return `<tr>
+            <td><span class="badge badge-orange">${methodName}</span></td>
+            <td style="color:var(--red); font-weight:700;">৳${fmt(d.amount)}</td>
+            <td style="font-size:11.5px;">${d.phone || '—'}</td>
+            <td><span class="badge ${statusBadge}">${d.status || 'Complete'}</span></td>
+            <td style="font-size:11.5px;">${d.time || '—'}</td>
+            <td>${actions}</td>
+        </tr>`;
+    }).join('');
+    lucide.createIcons();
+}
+function approveWithdraw(idx) {
+    const history = getHistory();
+    const h = history[idx];
+    if (!h || h.category !== 'Withdraw' || h.status !== 'Pending') return;
+    if (!confirm(`Approve withdrawal of ৳${fmt(h.amount)}? (User gets paid externally)`)) return;
+    h.status = 'Complete';
+    setHistory(history);
+    renderWithdraws(); renderOverview(); renderHistory();
+    showToast('✓ Withdrawal approved. Pay the user manually.', 'success');
+}
+
+/* ✅ FIX #4: rejectWithdraw refunds per-user record */
+function rejectWithdraw(idx) {
+    const history = getHistory();
+    const h = history[idx];
+    if (!h || h.category !== 'Withdraw' || h.status !== 'Pending') return;
+    if (!h.phone) { showToast('❌ এই ট্রানজেকশনে phone নেই!', 'error'); return; }
+    if (!confirm(`Reject & refund ৳${fmt(h.amount)} to ${h.phone}?`)) return;
+    const refunded = creditUserFields(
+        h.phone,
+        { balance: parseFloat(h.amount) },
+        'refundedWithdrawals',
+        withdrawMarkerKey(h)
+    );
+    if (!refunded) { showToast('⚠️ User record not found for ' + h.phone, 'error'); return; }
+    h.status = 'Rejected';
+    setHistory(history);
+    renderWithdraws(); renderOverview(); renderHistory(); renderUsers();
+    showToast('✗ Rejected — ৳' + fmt(h.amount) + ' refunded to ' + h.phone, 'info');
+}
+
+/* ================= PACKAGES ================= */
+function renderPackages() {
+    const packages = getPackages();
+    const tbody = document.getElementById('packagesBody');
+    tbody.innerHTML = packages.map((p, i) => `
+        <tr>
+            <td><img src="${p.image || ''}" alt="${p.name}" class="pkg-thumb" onerror="this.style.opacity='0.25'"></td>
+            <td><span class="badge badge-orange">VIP ${p.id}</span></td>
+            <td style="color:var(--text-main); font-weight:600;">${p.name}</td>
+            <td style="color:var(--accent); font-weight:700;">৳${fmt0(p.price)}</td>
+            <td style="color:var(--green); font-weight:700;">৳${fmt(p.daily || 0)}</td>
+            <td>${p.days || 7} day(s)</td>
+            <td>৳${fmt0(p.total || 0)}</td>
+            <td><button class="btn btn-xs" onclick="editPackage(${i})"><i data-lucide="pencil" size="12"></i> Edit</button></td>
+        </tr>`).join('');
+    lucide.createIcons();
+}
+function editPackage(i) {
+    const p = getPackages()[i];
+    document.getElementById('pkgEditIndex').value = i;
+    document.getElementById('pkgEditName').value = p.name;
+    document.getElementById('pkgEditImage').value = p.image || '';
+    document.getElementById('pkgEditPrice').value = p.price;
+    document.getElementById('pkgEditDaily').value = p.daily || 0;
+    document.getElementById('pkgEditDays').value = p.days || 7;
+    document.getElementById('pkgEditTotal').value = p.total || 0;
+    previewPkgImage();
+    openModal('packageModal');
+}
+function previewPkgImage() {
+    const url = document.getElementById('pkgEditImage').value.trim();
+    const img = document.getElementById('pkgImagePreview');
+    if (url) { img.src = url; img.style.display = 'block'; img.onerror = () => { img.style.display = 'none'; }; }
+    else { img.style.display = 'none'; }
+}
+function savePackage() {
+    const i = parseInt(document.getElementById('pkgEditIndex').value);
+    const packages = getPackages();
+    packages[i] = {
+        ...packages[i],
+        name: document.getElementById('pkgEditName').value,
+        image: document.getElementById('pkgEditImage').value.trim(),
+        price: parseFloat(document.getElementById('pkgEditPrice').value) || 0,
+        daily: parseFloat(document.getElementById('pkgEditDaily').value) || 0,
+        days: parseInt(document.getElementById('pkgEditDays').value) || 7,
+        total: parseFloat(document.getElementById('pkgEditTotal').value) || 0
+    };
+    setPackages(packages);
+    closeModal('packageModal');
+    renderPackages();
+    showToast('✓ Package updated — synced to website', 'success');
+}
+function resetPackages() {
+    if (!confirm('Reset all packages to the default 2 packages?')) return;
+    DB.del(KEYS.packages);
+    renderPackages();
+    showToast('Packages reset to 2 defaults', 'success');
+}
+
+/* ================= VOUCHERS ================= */
+function renderVouchers() {
+    const vouchers = getVouchers();
+    const tbody = document.getElementById('vouchersBody');
+    const entries = Object.entries(vouchers);
+    const redeemed = toArray(DB.getJSON(KEYS.vouchersRedeemed, []));
+    if (!entries.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:40px; color:var(--text-muted);">No vouchers</td></tr>';
+    } else {
+        tbody.innerHTML = entries.map(([code, reward]) => {
+            const isUsed = redeemed.indexOf(code) !== -1;
+            return `<tr>
+                <td style="font-family:monospace; color:var(--gold); font-weight:700;">${code}</td>
+                <td style="color:var(--green); font-weight:700;">৳${fmt0(reward)}</td>
+                <td>${isUsed ? '<span class="badge badge-red">Used</span>' : '<span class="badge badge-green">Active</span>'}</td>
+                <td><button class="btn btn-xs btn-danger" onclick="deleteVoucher('${code}')"><i data-lucide="trash-2" size="12"></i></button></td>
+            </tr>`;
+        }).join('');
+    }
+    const rBody = document.getElementById('redeemedBody');
+    if (!redeemed.length) {
+        rBody.innerHTML = '<tr><td colspan="2" style="text-align:center; padding:40px; color:var(--text-muted);">No redeemed codes</td></tr>';
+    } else {
+        rBody.innerHTML = redeemed.map(code => `<tr><td style="font-family:monospace; color:var(--gold); font-weight:700;">${code}</td><td><span class="badge badge-red">Already used</span></td></tr>`).join('');
+    }
+    lucide.createIcons();
+}
+function openAddVoucherModal() {
+    document.getElementById('voucherCode').value = '';
+    document.getElementById('voucherReward').value = '';
+    openModal('voucherModal');
+}
+function generateRandomCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = 'GIFT';
+    for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+    document.getElementById('voucherCode').value = code;
+    showToast('🎲 Random code: ' + code, 'info');
+}
+function quickGenerateRandomCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = 'GIFT';
+    for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+    document.getElementById('voucherCode').value = code;
+    document.getElementById('voucherReward').value = '100';
+    openModal('voucherModal');
+    showToast('🎲 Random code: ' + code + ' (Reward: ৳100)', 'success');
+}
+function saveVoucher() {
+    const code = document.getElementById('voucherCode').value.trim().toUpperCase();
+    const reward = parseFloat(document.getElementById('voucherReward').value);
+    if (!code || !reward || reward <= 0) { showToast('Valid code & reward required', 'error'); return; }
+    if (code.length < 4) { showToast('Code must be at least 4 characters', 'error'); return; }
+    const vouchers = getVouchers();
+    if (vouchers[code]) { showToast('This code already exists!', 'error'); return; }
+    vouchers[code] = reward;
+    setVouchers(vouchers);
+    closeModal('voucherModal');
+    renderVouchers();
+    showToast('Voucher "' + code + '" saved (single-use)', 'success');
+}
+function deleteVoucher(code) {
+    if (!confirm('Delete voucher "' + code + '"?')) return;
+    const vouchers = getVouchers();
+    delete vouchers[code];
+    setVouchers(vouchers);
+    renderVouchers();
+    showToast('Voucher deleted', 'success');
+}
+
+/* ================= SETTINGS ================= */
+function renderSettings() {
+    const s = getSettings();
+    document.getElementById('setBkashGoPay').value = s.bkashGoPay;
+    document.getElementById('setBkashFastPay').value = s.bkashFastPay;
+    document.getElementById('setNagadNumber').value = s.nagadNumber;
+    document.getElementById('setMinDeposit').value = s.minDeposit;
+    document.getElementById('setMinWithdraw').value = s.minWithdraw;
+    document.getElementById('setSignupBonus').value = s.signupBonus;
+    document.getElementById('setReferralPercent').value = s.referralPercent;
+    document.getElementById('setTax').value = s.tax;
+    updateFbStatus(fbReady);
+    const emailEl = document.getElementById('settingsCurrentEmail');
+    if (emailEl) emailEl.textContent = currentAdminEmail || '—';
+}
+function saveWalletSettings() {
+    const s = getSettings();
+    s.bkashGoPay = document.getElementById('setBkashGoPay').value.trim();
+    s.bkashFastPay = document.getElementById('setBkashFastPay').value.trim();
+    s.nagadNumber = document.getElementById('setNagadNumber').value.trim();
+    setSettings(s);
+    showToast('✓ 3 wallet numbers saved', 'success');
+}
+function saveLimits() {
+    const s = getSettings();
+    s.minDeposit = parseFloat(document.getElementById('setMinDeposit').value) || 550;
+    s.minWithdraw = parseFloat(document.getElementById('setMinWithdraw').value) || 120;
+    s.signupBonus = parseFloat(document.getElementById('setSignupBonus').value) || 0;
+    setSettings(s);
+    showToast('✓ Limits & signup bonus saved', 'success');
+}
+function saveReferralTax() {
+    const s = getSettings();
+    s.referralPercent = parseFloat(document.getElementById('setReferralPercent').value) || 20;
+    s.tax = parseFloat(document.getElementById('setTax').value) || 10;
+    setSettings(s);
+    showToast('✓ Referral % & tax saved', 'success');
+}
+
+/* ================= HISTORY ================= */
+function renderHistory() {
+    const history = getHistory();
+    const tbody = document.getElementById('allHistoryBody');
+    if (!history.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:40px; color:var(--text-muted);">No records</td></tr>';
+        return;
+    }
+    tbody.innerHTML = history.slice().reverse().map((h, i) => {
+        const idx = history.length - 1 - i;
+        const catBadge = h.category === 'Deposit' ? 'badge-green' : h.category === 'Withdraw' ? 'badge-red' : 'badge-orange';
+        let statusBadge = 'badge-green';
+        if (h.status === 'Pending') statusBadge = 'badge-yellow';
+        else if (h.status === 'Failed' || h.status === 'Rejected') statusBadge = 'badge-red';
+        return `<tr>
+            <td><span class="badge ${catBadge}">${h.category}</span></td>
+            <td>${h.method || h.type || '—'}</td>
+            <td style="color:var(--text-main); font-weight:700;">৳${fmt(h.amount)}</td>
+            <td style="font-family:monospace; font-size:11px;">${h.trx || '—'}</td>
+            <td style="font-size:11.5px;">${h.phone || '—'}</td>
+            <td><span class="badge ${statusBadge}">${h.status || 'Complete'}</span></td>
+            <td style="font-size:11.5px;">${h.time || '—'}</td>
+            <td><button class="btn btn-xs btn-danger" onclick="deleteTx(${idx})"><i data-lucide="trash-2" size="12"></i></button></td>
+        </tr>`;
+    }).join('');
+    lucide.createIcons();
+}
+function clearHistory() {
+    if (!confirm('Delete ALL transaction records?')) return;
+    setHistory([]);
+    renderHistory(); renderOverview();
+    showToast('History cleared', 'success');
+}
+function clearAllData() {
+    if (!confirm('⚠️ Delete ALL TakarBazar data? This is irreversible.')) return;
+    Object.values(KEYS).forEach(k => DB.del(k));
+    showToast('All data cleared', 'success');
+    setTimeout(() => location.reload(), 1200);
+}
+
+function syncNow() {
+    if (fbReady && fbDb) {
+        Object.entries(FB_PATH_MAP).forEach(([localKey, path]) => {
+            fbDb.ref(path).once('value', (snap) => {
+                const val = snap.val();
+                if (val === null || val === undefined) return;
+                let strVal;
+                if (localKey === 'tb_users') strVal = JSON.stringify(normalizeUsersArray(val));
+                else if (ARRAY_KEYS.includes(localKey)) strVal = JSON.stringify(toArray(val));
+                else if (typeof val === 'object') strVal = JSON.stringify(val);
+                else if (typeof val === 'boolean') strVal = val.toString();
+                else strVal = String(val);
+                try { localStorage.setItem(localKey, strVal); } catch(e) {}
+            });
+        });
+    }
+    showToast('Refreshing...', 'info');
+    setTimeout(() => {
+        const cur = document.querySelector('.page.active');
+        if (cur) {
+            const pageName = cur.id.replace('page-', '');
+            if (pageRenderers[pageName]) pageRenderers[pageName]();
+        }
+        showToast('Data refreshed', 'success');
+    }, 500);
+}
+
+function exportAll() {
+    const data = {
+        exportedAt: new Date().toISOString(),
+        firebaseConnected: fbReady,
+        users: getUsers(),
+        balance: DB.get(KEYS.balance, '0'),
+        deposit: DB.get(KEYS.deposit, '0'),
+        income: DB.get(KEYS.income, '0'),
+        planEarnings: DB.get(KEYS.planEarnings, '0'),
+        hasBoughtPlan: DB.get(KEYS.hasBoughtPlan, 'false'),
+        activePlans: toArray(DB.getJSON(KEYS.activePlans, [])),
+        redeemedVouchers: toArray(DB.getJSON(KEYS.vouchersRedeemed, [])),
+        history: getHistory(),
+        packages: getPackages(),
+        vouchers: getVouchers(),
+        settings: getSettings()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'takarbazar-backup-' + Date.now() + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Data exported', 'success');
+}
+
+document.getElementById('globalSearch').addEventListener('input', (e) => {
+    const q = e.target.value.toLowerCase().trim();
+    if (!q) { document.querySelectorAll('.page.active tbody tr').forEach(tr => tr.style.display = ''); return; }
+    const tbody = document.querySelector('.page.active tbody');
+    if (!tbody) return;
+    tbody.querySelectorAll('tr').forEach(tr => {
+        tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+});
+
+/* ============================================================
+   INIT
+============================================================ */
+async function init() {
+    if (getUsers().length === 0) {
+        setUsers([{ phone: '01816328381', password: '123456', name: 'Demo User', uid: generateSixDigitUid() }]);
+    }
+    if (!DB.getJSON(KEYS.validVouchers, null)) setVouchers(DEFAULT_VOUCHERS);
+    if (!DB.getJSON(KEYS.packages, null)) setPackages(DEFAULT_PACKAGES);
+    if (!DB.getJSON(KEYS.settings, null)) setSettings(DEFAULT_SETTINGS);
+    lucide.createIcons();
+    try { tryInitFirebase(); } catch (err) { console.error('Firebase init failed:', err); showLoginError('🔥 Firebase init ব্যর্থ। Console চেক করুন।'); }
+    try { subscribeAuthState(); } catch (err) { console.error('Auth subscribe failed:', err); showAdminLogin(); }
+    window.addEventListener('storage', (e) => {
+        if (Object.values(KEYS).includes(e.key) && !isRemoteUpdate) {
+            const cur = document.querySelector('.page.active');
+            if (cur) {
+                const pageName = cur.id.replace('page-', '');
+                if (pageRenderers[pageName]) pageRenderers[pageName]();
+            }
+        }
+    });
+}
+init();
+</script>
+</body>
+</html>
